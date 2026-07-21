@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Sistema de Vendas</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>💰 SalesUP</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/Dashboard" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="/Products" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Products" ? "active" : "")">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">Produtos</span>
+                </a>
+                <a href="/Sales/Register" class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Register" && ViewContext.RouteData.Values["controller"]?.ToString() == "Sales" ? "active" : "")">
+                    <span class="nav-icon">🛒</span>
+                    <span class="nav-text">Nova Venda</span>
+                </a>
+                <a href="/Sales/History" class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "History" ? "active" : "")">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Histórico</span>
+                </a>
+                <a href="/Reports" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reports" ? "active" : "")">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Relatórios</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>@ViewData["Title"]</h1>
+            </header>
+            <div class="content">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

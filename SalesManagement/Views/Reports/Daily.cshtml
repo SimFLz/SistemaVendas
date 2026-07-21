@@ -1,0 +1,66 @@
+@model SalesManagement.ViewModels.DailyReportViewModel
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = "Relatório Diário";
+    var selectedDate = ViewData["SelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📈 Relatório Diário</span>
+    </div>
+
+    <form method="get" asp-action="Daily" class="search-box" style="margin-bottom: 1.5rem;">
+        <input type="date" name="date" value="@selectedDate" class="form-input" style="width: 180px;" />
+        <button type="submit" class="btn btn-secondary">🔍 Gerar</button>
+    </form>
+
+    <h3 style="margin-bottom: 1rem; color: var(--text-muted); font-size: 1rem;">
+        📅 @Model.Date.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("pt-BR"))
+    </h3>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-card">
+            <div class="label">💰 Receita Total</div>
+            <div class="value primary">@Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🛒 Nº de Vendas</div>
+            <div class="value">@Model.TotalSales</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">📊 Ticket Médio</div>
+            <div class="value success">@Model.AverageTicket.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <span class="card-title">💳 Vendas por Forma de Pagamento</span>
+        </div>
+        @if (Model.SalesByPaymentMethod.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                @foreach (var item in Model.SalesByPaymentMethod)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg); border-radius: 0.375rem;">
+                        <span>
+                            @(item.Key switch {
+                                PaymentMethod.Cash => "💵 Dinheiro",
+                                PaymentMethod.DebitCard => "💳 Cartão de Débito",
+                                PaymentMethod.CreditCard => "💳 Cartão de Crédito",
+                                PaymentMethod.Pix => "📱 PIX",
+                                _ => item.Key.ToString()
+                            })
+                        </span>
+                        <span style="font-weight: 600;">@item.Value.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Nenhuma venda nesta data.</p>
+        }
+    </div>
+</div>

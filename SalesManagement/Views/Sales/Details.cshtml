@@ -1,0 +1,87 @@
+@model SalesManagement.Models.Sale
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = $"Detalhes da Venda #{Model.Id}";
+}
+
+<div class="card" style="max-width: 700px;">
+    <div class="card-header">
+        <span class="card-title">📋 Venda #@Model.Id</span>
+        <span style="color: var(--text-muted); font-size: 0.875rem;">
+            @Model.SaleDate.ToString("dd/MM/yyyy HH:mm")
+        </span>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Status</label>
+                <p>
+                    @if (Model.Status == SaleStatus.Completed)
+                    {
+                        <span style="color: var(--success); font-weight: 600;">✓ Finalizada</span>
+                    }
+                    else
+                    {
+                        <span style="color: var(--danger);">✕ Cancelada</span>
+                    }
+                </p>
+            </div>
+            <div>
+                <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Pagamento</label>
+                <p>
+                    @(Model.PaymentMethod switch {
+                        PaymentMethod.Cash => "💵 Dinheiro",
+                        PaymentMethod.DebitCard => "💳 Débito",
+                        PaymentMethod.CreditCard => "💳 Crédito",
+                        PaymentMethod.Pix => "📱 PIX",
+                        _ => Model.PaymentMethod.ToString()
+                    })
+                </p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Preço Unit.</th>
+                        <th>Desconto</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.Product.Name</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td>@item.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td>@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: right;">
+            @if (Model.Discount > 0)
+            {
+                <p style="color: var(--text-muted); font-size: 0.875rem;">
+                    Desconto Geral: @Model.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+                </p>
+            }
+            <p style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                TOTAL: @Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+            </p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="/Sales/Receipt/@Model.Id" class="btn btn-primary">🖨️ Reimprimir</a>
+        <a href="/Sales/History" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>

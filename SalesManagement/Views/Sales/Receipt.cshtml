@@ -1,0 +1,77 @@
+﻿@model SalesManagement.Models.Sale
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = $"Notinha - Venda #{Model.Id}";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card" style="max-width: 400px; margin: 0 auto;">
+    <div class="receipt">
+        <div class="receipt-header">
+            <h3>🧾 SALESUP</h3>
+            <p>CNPJ: 00.000.000/0000-00</p>
+            <p>@Model.SaleDate.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>Venda #@Model.Id</p>
+        </div>
+
+        <div class="receipt-items">
+            @foreach (var item in Model.Items)
+            {
+                <div class="receipt-item">
+                    <span>@item.Quantity x @item.Product.Name</span>
+                    <span>@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+                @if (item.Discount > 0)
+                {
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                        &nbsp;&nbsp;Desc: -@item.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+                    </div>
+                }
+            }
+        </div>
+
+        @if (Model.Discount > 0)
+        {
+            <div style="margin-top: 0.5rem; font-size: 0.875rem;">
+                <div class="receipt-item">
+                    <span>Desconto Geral:</span>
+                    <span>-@Model.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+            </div>
+        }
+
+        <div class="receipt-total">
+            <div class="receipt-item">
+                <span>TOTAL:</span>
+                <span>@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+            </div>
+            <div style="font-size: 0.875rem; margin-top: 0.25rem;">
+                <span>Pagamento:</span>
+                <span>
+                    @(Model.PaymentMethod switch {
+                        PaymentMethod.Cash => "💵 Dinheiro",
+                        PaymentMethod.DebitCard => "💳 Débito",
+                        PaymentMethod.CreditCard => "💳 Crédito",
+                        PaymentMethod.Pix => "📱 PIX",
+                        _ => Model.PaymentMethod.ToString()
+                    })
+                </span>
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            <p>Obrigado pela preferência!</p>
+            <p>Volte sempre 🙏</p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button onclick="window.print()" class="btn btn-primary" style="flex: 1;">🖨️ Imprimir</button>
+        <a href="/Sales/Register" class="btn btn-success" style="flex: 1;">🛒 Nova Venda</a>
+    </div>
+    <a href="/Sales/History" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">📋 Ver Histórico</a>
+</div>

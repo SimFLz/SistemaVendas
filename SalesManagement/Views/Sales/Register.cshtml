@@ -1,0 +1,281 @@
+@model SalesManagement.ViewModels.SaleRegisterViewModel
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = "Nova Venda";
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="pdv-container">
+    <!-- Lado Esquerdo: Adicionar Produtos -->
+    <div class="pdv-products">
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <span class="card-title">🛒 Adicionar Produto</span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Código do Produto</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="productCode" class="form-input" placeholder="Digite o código e pressione Enter" autofocus />
+                <button type="button" id="btnAddProduct" class="btn btn-primary">➕</button>
+            </div>
+            <span id="addProductError" style="color: var(--danger); font-size: 0.875rem; display: none;"></span>
+        </div>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
+
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <span class="card-title">📋 Itens da Venda</span>
+        </div>
+
+        <div class="table-container">
+            <table class="table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Preço Unit.</th>
+                        <th>Desc.</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr id="emptyRow">
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                Nenhum produto adicionado. Digite o código acima.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr data-product-id="@item.ProductId">
+                                <td>@item.ProductCode</td>
+                                <td>@item.ProductName</td>
+                                <td>
+                                    <input type="number" class="form-input qty-input" value="@item.Quantity" min="1" style="width: 60px;" data-product-id="@item.ProductId" />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-input price-input" value="@item.UnitPrice.ToString("F2")" step="0.01" min="0.01" style="width: 90px;" data-product-id="@item.ProductId" />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-input discount-input" value="@item.Discount.ToString("F2")" step="0.01" min="0" style="width: 80px;" data-product-id="@item.ProductId" />
+                                </td>
+                                <td class="item-total">@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-remove" data-product-id="@item.ProductId" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lado Direito: Resumo e Finalização -->
+    <div class="pdv-cart">
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <span class="card-title">💰 Resumo</span>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-muted);">Subtotal:</span>
+                <span id="subtotal">@Model.Subtotal.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-muted);">Desconto Itens:</span>
+                <span id="itemsDiscount">@Model.Items.Sum(i => i.Discount).ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-muted);">Desconto Geral:</span>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="generalDiscount" class="form-input" value="@Model.GeneralDiscount.ToString("F2")" step="0.01" min="0" style="width: 90px;" />
+                    <button type="button" id="btnApplyGeneralDiscount" class="btn btn-secondary" style="padding: 0.375rem 0.75rem;">Aplicar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-total">
+            <span>TOTAL:</span>
+            <span id="totalAmount" style="color: var(--primary);">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+        </div>
+
+        <form asp-action="Finalize" method="post" id="finalizeForm" style="margin-top: 1.5rem;">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="PaymentMethod" class="form-label">Forma de Pagamento *</label>
+                <select asp-for="PaymentMethod" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    <option value="@PaymentMethod.Cash">💵 Dinheiro</option>
+                    <option value="@PaymentMethod.DebitCard">💳 Cartão de Débito</option>
+                    <option value="@PaymentMethod.CreditCard">💳 Cartão de Crédito</option>
+                    <option value="@PaymentMethod.Pix">📱 PIX</option>
+                </select>
+                <span asp-validation-for="PaymentMethod" style="color: var(--danger); font-size: 0.875rem;"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg" style="width: 100%; margin-top: 1rem;" @(Model.Items.Count == 0 ? "disabled" : "") id="btnFinalize">
+                ✅ Finalizar Venda
+            </button>
+        </form>
+
+        <a href="/Sales" class="btn btn-secondary" style="width: 100%; margin-top: 0.75rem;">← Cancelar</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Adicionar produto por código
+        document.getElementById('btnAddProduct').addEventListener('click', addProduct);
+        document.getElementById('productCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addProduct();
+            }
+        });
+
+        function addProduct() {
+            const code = document.getElementById('productCode').value.trim();
+            if (!code) return;
+
+            const errorSpan = document.getElementById('addProductError');
+            errorSpan.style.display = 'none';
+
+            fetch('/Sales/AddItem', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: `productCode=${encodeURIComponent(code)}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('productCode').value = '';
+                    document.getElementById('productCode').focus();
+                    updateCart(data.cart);
+                } else {
+                    errorSpan.textContent = data.message;
+                    errorSpan.style.display = 'block';
+                }
+            });
+        }
+
+        // Atualizar quantidade
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('qty-input')) {
+                const productId = e.target.dataset.productId;
+                const quantity = parseInt(e.target.value);
+                if (quantity < 1) { e.target.value = 1; return; }
+
+                updateItem('/Sales/UpdateQuantity', `productId=${productId}&quantity=${quantity}`);
+            }
+        });
+
+        // Atualizar preço
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('price-input')) {
+                const productId = e.target.dataset.productId;
+                const newPrice = parseFloat(e.target.value);
+                if (newPrice <= 0) { e.target.value = '0.01'; return; }
+
+                updateItem('/Sales/UpdatePrice', `productId=${productId}&newPrice=${newPrice}`);
+            }
+        });
+
+        // Aplicar desconto no item
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('discount-input')) {
+                const productId = e.target.dataset.productId;
+                const discount = parseFloat(e.target.value) || 0;
+
+                updateItem('/Sales/ApplyDiscount', `productId=${productId}&discount=${discount}`);
+            }
+        });
+
+        // Remover item
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-remove')) {
+                const productId = e.target.dataset.productId;
+                updateItem('/Sales/RemoveItem', `productId=${productId}`);
+            }
+        });
+
+        // Desconto geral
+        document.getElementById('btnApplyGeneralDiscount').addEventListener('click', function() {
+            const discount = parseFloat(document.getElementById('generalDiscount').value) || 0;
+            updateItem('/Sales/ApplyGeneralDiscount', `discount=${discount}`);
+        });
+
+        function updateItem(url, body) {
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: body
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    updateCart(data.cart);
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function updateCart(cart) {
+            const tbody = document.getElementById('itemsTableBody');
+            const emptyRow = document.getElementById('emptyRow');
+
+            if (cart.items.length === 0) {
+                tbody.innerHTML = `
+                    <tr id="emptyRow">
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Nenhum produto adicionado. Digite o código acima.
+                        </td>
+                    </tr>`;
+                document.getElementById('btnFinalize').disabled = true;
+            } else {
+                tbody.innerHTML = cart.items.map(item => `
+                    <tr data-product-id="${item.productId}">
+                        <td>${item.productCode}</td>
+                        <td>${item.productName}</td>
+                        <td>
+                            <input type="number" class="form-input qty-input" value="${item.quantity}" min="1" style="width: 60px;" data-product-id="${item.productId}" />
+                        </td>
+                        <td>
+                            <input type="number" class="form-input price-input" value="${item.unitPrice.toFixed(2)}" step="0.01" min="0.01" style="width: 90px;" data-product-id="${item.productId}" />
+                        </td>
+                        <td>
+                            <input type="number" class="form-input discount-input" value="${item.discount.toFixed(2)}" step="0.01" min="0" style="width: 80px;" data-product-id="${item.productId}" />
+                        </td>
+                        <td class="item-total">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-remove" data-product-id="${item.productId}" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+                document.getElementById('btnFinalize').disabled = false;
+            }
+
+            document.getElementById('subtotal').textContent = 'R$ ' + cart.subtotal.toFixed(2).replace('.', ',');
+            document.getElementById('itemsDiscount').textContent = 'R$ ' + cart.items.reduce((sum, i) => sum + i.discount, 0).toFixed(2).replace('.', ',');
+            document.getElementById('totalAmount').textContent = 'R$ ' + cart.totalAmount.toFixed(2).replace('.', ',');
+        }
+    </script>
+}

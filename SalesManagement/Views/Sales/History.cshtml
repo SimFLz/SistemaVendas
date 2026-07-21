@@ -1,0 +1,85 @@
+@model IEnumerable<SalesManagement.Models.Sale>
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = "Histórico de Vendas";
+    var search = ViewData["Search"] as string ?? "";
+    var dateFrom = ViewData["DateFrom"] as string ?? "";
+    var dateTo = ViewData["DateTo"] as string ?? "";
+    var paymentMethod = ViewData["PaymentMethod"] as PaymentMethod?;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📋 Histórico de Vendas</span>
+    </div>
+
+    <form method="get" asp-action="History" class="search-box" style="flex-wrap: wrap;">
+        <input type="text" name="search" value="@search" class="form-input" placeholder="Nº da venda..." style="width: 120px;" />
+        <input type="date" name="dateFrom" value="@dateFrom" class="form-input" style="width: 150px;" />
+        <input type="date" name="dateTo" value="@dateTo" class="form-input" style="width: 150px;" />
+        <select name="paymentMethod" class="form-select" style="width: 180px;">
+            <option value="">Todas as formas</option>
+            <option value="@PaymentMethod.Cash" selected="@(paymentMethod == PaymentMethod.Cash ? "selected" : null)">💵 Dinheiro</option>
+            <option value="@PaymentMethod.DebitCard" selected="@(paymentMethod == PaymentMethod.DebitCard ? "selected" : null)">💳 Débito</option>
+            <option value="@PaymentMethod.CreditCard" selected="@(paymentMethod == PaymentMethod.CreditCard ? "selected" : null)">💳 Crédito</option>
+            <option value="@PaymentMethod.Pix" selected="@(paymentMethod == PaymentMethod.Pix ? "selected" : null)">📱 PIX</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">🔍 Filtrar</button>
+        <a href="/Sales/History" class="btn btn-secondary">❌ Limpar</a>
+    </form>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Venda #</th>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>Valor Total</th>
+                    <th>Pagamento</th>
+                    <th style="width: 220px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>#@item.Id</strong></td>
+                        <td>@item.SaleDate.ToString("dd/MM/yyyy")</td>
+                        <td>@item.SaleDate.ToString("HH:mm")</td>
+                        <td>@item.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                        <td>
+                            @(item.PaymentMethod switch {
+                                PaymentMethod.Cash => "💵 Dinheiro",
+                                PaymentMethod.DebitCard => "💳 Débito",
+                                PaymentMethod.CreditCard => "💳 Crédito",
+                                PaymentMethod.Pix => "📱 PIX",
+                                _ => item.PaymentMethod.ToString()
+                            })
+                        </td>
+                        <td>
+                            <a href="/Sales/Details/@item.Id" class="btn btn-secondary" style="padding: 0.375rem 0.75rem;">👁️</a>
+                            <a href="/Sales/Receipt/@item.Id" class="btn btn-primary" style="padding: 0.375rem 0.75rem;">🖨️</a>
+                            <form asp-action="Cancel" asp-route-id="@item.Id" method="post" style="display: inline;" onsubmit="return confirm('Cancelar venda #@item.Id?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger" style="padding: 0.375rem 0.75rem;">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <p>Nenhuma venda encontrada.</p>
+        </div>
+    }
+</div>

@@ -1,0 +1,46 @@
+﻿@model SalesManagement.Models.Product
+@{
+    ViewData["Title"] = "Detalhes do Produto";
+}
+
+<div class="card" style="max-width: 600px;">
+    <div class="card-header">
+        <span class="card-title">👁️ Detalhes do Produto</span>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Código</label>
+            <p style="font-size: 1.25rem; font-weight: 700;">@Model.Code</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Nome</label>
+            <p style="font-size: 1.125rem;">@Model.Name</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Preço</label>
+            <p style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">@Model.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Status</label>
+            <p>
+                @if (Model.IsActive)
+                {
+                    <span style="color: var(--success); font-weight: 600;">✓ Ativo</span>
+                }
+                else
+                {
+                    <span style="color: var(--danger);">✗ Inativo</span>
+                }
+            </p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="/Products/Edit/@Model.Id" class="btn btn-primary">✏️ Editar</a>
+        <a href="/Products" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>

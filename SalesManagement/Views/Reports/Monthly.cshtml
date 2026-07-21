@@ -1,0 +1,79 @@
+@model SalesManagement.ViewModels.MonthlyReportViewModel
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = "Relatório Mensal";
+    var selectedYear = (int?)ViewData["SelectedYear"] ?? DateTime.Today.Year;
+    var selectedMonth = (int?)ViewData["SelectedMonth"] ?? DateTime.Today.Month;
+}
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📈 Relatório Mensal</span>
+    </div>
+
+    <form method="get" asp-action="Monthly" class="search-box" style="margin-bottom: 1.5rem;">
+        <select name="month" class="form-select" style="width: 150px;">
+            @for (int m = 1; m <= 12; m++)
+            {
+                var monthName = new DateTime(2024, m, 1).ToString("MMMM", new System.Globalization.CultureInfo("pt-BR"));
+                <option value="@m" selected="@(m == selectedMonth ? "selected" : null)">@monthName</option>
+            }
+        </select>
+        <select name="year" class="form-select" style="width: 100px;">
+            @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 5; y--)
+            {
+                <option value="@y" selected="@(y == selectedYear ? "selected" : null)">@y</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-secondary">🔍 Gerar</button>
+    </form>
+
+    <h3 style="margin-bottom: 1rem; color: var(--text-muted); font-size: 1rem;">
+        📅 @char.ToUpper(Model.MonthName[0])@Model.MonthName.Substring(1) de @Model.Year
+    </h3>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-card">
+            <div class="label">💰 Receita Total</div>
+            <div class="value primary">@Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🛒 Nº de Vendas</div>
+            <div class="value">@Model.TotalSales</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">📊 Ticket Médio</div>
+            <div class="value success">@Model.AverageTicket.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <span class="card-title">💳 Vendas por Forma de Pagamento</span>
+        </div>
+        @if (Model.SalesByPaymentMethod.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                @foreach (var item in Model.SalesByPaymentMethod)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg); border-radius: 0.375rem;">
+                        <span>
+                            @(item.Key switch {
+                                PaymentMethod.Cash => "💵 Dinheiro",
+                                PaymentMethod.DebitCard => "💳 Cartão de Débito",
+                                PaymentMethod.CreditCard => "💳 Cartão de Crédito",
+                                PaymentMethod.Pix => "📱 PIX",
+                                _ => item.Key.ToString()
+                            })
+                        </span>
+                        <span style="font-weight: 600;">@item.Value.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Nenhuma venda neste mês.</p>
+        }
+    </div>
+</div>

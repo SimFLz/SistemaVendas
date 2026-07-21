@@ -1,0 +1,79 @@
+@model IEnumerable<SalesManagement.Models.Product>
+@{
+    ViewData["Title"] = "Produtos";
+    var search = ViewData["Search"] as string ?? "";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-danger">@TempData["Warning"]</div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📦 Produtos</span>
+        <a href="/Products/Create" class="btn btn-primary">+ Novo Produto</a>
+    </div>
+
+    <form method="get" asp-action="Index" class="search-box">
+        <input type="text" name="search" value="@search" class="form-input" placeholder="Pesquisar por nome ou código..." />
+        <button type="submit" class="btn btn-secondary">🔍 Buscar</button>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <a href="/Products" class="btn btn-secondary">❌ Limpar</a>
+        }
+    </form>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Status</th>
+                    <th style="width: 200px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.Code</strong></td>
+                        <td>@item.Name</td>
+                        <td>@item.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span style="color: var(--success); font-weight: 600;">✓ Ativo</span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--danger);">✗ Inativo</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="/Products/Details/@item.Id" class="btn btn-secondary" style="padding: 0.375rem 0.75rem;">👁️</a>
+                            <a href="/Products/Edit/@item.Id" class="btn btn-primary" style="padding: 0.375rem 0.75rem;">✏️</a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir @item.Name?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger" style="padding: 0.375rem 0.75rem;">🗑️</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <p>Nenhum produto encontrado.</p>
+        </div>
+    }
+</div>
