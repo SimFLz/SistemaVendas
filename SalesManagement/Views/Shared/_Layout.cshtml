@@ -35,6 +35,10 @@
                     <span class="nav-icon">📈</span>
                     <span class="nav-text">Relatórios</span>
                 </a>
+                <a href="/CashRegister/List" class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "List" && ViewContext.RouteData.Values["controller"]?.ToString() == "CashRegister" ? "active" : "")">
+                    <span class="nav-icon">🔒</span>
+                    <span class="nav-text">Caixas</span>
+                </a>
             </nav>
         </aside>
 

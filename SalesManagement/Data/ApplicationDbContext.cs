@@ -14,9 +14,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<Product> Products { get; set; } = null!;
     public DbSet<Sale> Sales { get; set; } = null!;
     public DbSet<SaleItem> SaleItems { get; set; } = null!;
+    public DbSet<CashRegister> CashRegisters { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+       
+
         base.OnModelCreating(modelBuilder);
 
         // Índice único para código do produto
@@ -45,6 +48,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Sale>()
             .Property(s => s.Status)
             .HasConversion<string>();
+
+        modelBuilder.Entity<CashRegister>()
+          .Property(c => c.Status)
+          .HasConversion<string>();
 
         // Seed de produtos de exemplo
         modelBuilder.Entity<Product>().HasData(

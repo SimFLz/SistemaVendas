@@ -27,7 +27,6 @@ public class SalesController : Controller
     {
         ViewData["Title"] = "Nova Venda";
 
-        // Recuperar carrinho da sessão ou criar novo
         var cart = HttpContext.Session.GetString("SaleCart");
         var viewModel = new SaleRegisterViewModel();
 
@@ -40,7 +39,7 @@ public class SalesController : Controller
         return View(viewModel);
     }
 
-    // POST: /Sales/AddItem (AJAX - adicionar produto por código)
+    // POST: /Sales/AddItem (AJAX)
     [HttpPost]
     public async Task<IActionResult> AddItem(string productCode)
     {
@@ -52,10 +51,8 @@ public class SalesController : Controller
             return Json(new { success = false, message = "Produto não encontrado." });
         }
 
-        // Recuperar carrinho
         var cart = GetCartFromSession();
 
-        // Verificar se já existe no carrinho
         var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == product.Id);
         if (existingItem != null)
         {
@@ -74,7 +71,6 @@ public class SalesController : Controller
         }
 
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -97,7 +93,6 @@ public class SalesController : Controller
 
         item.Quantity = quantity;
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -120,7 +115,6 @@ public class SalesController : Controller
 
         item.UnitPrice = newPrice;
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -144,7 +138,6 @@ public class SalesController : Controller
 
         item.Discount = discount;
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -162,7 +155,6 @@ public class SalesController : Controller
 
         cart.Items.Remove(item);
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -179,7 +171,6 @@ public class SalesController : Controller
 
         cart.GeneralDiscount = discount;
         SaveCartToSession(cart);
-
         return Json(new { success = true, cart = cart });
     }
 
@@ -234,7 +225,7 @@ public class SalesController : Controller
         return RedirectToAction(nameof(Receipt), new { id = sale.Id });
     }
 
-    // GET: /Sales/Receipt/5 (Notinha)
+    // GET: /Sales/Receipt/5 (Notinha da venda)
     public async Task<IActionResult> Receipt(int? id)
     {
         if (id == null) return NotFound();

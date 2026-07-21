@@ -63,4 +63,32 @@
             <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Nenhuma venda nesta data.</p>
         }
     </div>
+       <!-- Botão Fechar Caixa -->
+    @{
+        var cashRegister = ViewData["OpenCashRegister"] as SalesManagement.Models.CashRegister;
+    }
+
+       <!-- Botão Fechar Caixa -->
+   
+    @if (cashRegister != null)
+    {
+        <div class="card" style="margin-top: 1.5rem; border: 2px solid var(--danger);">
+            <div class="card-header">
+                <span class="card-title">🔒 Fechamento de Caixa</span>
+            </div>
+            <p style="margin-bottom: 1rem; color: var(--text-muted);">
+                Caixa aberto às @cashRegister.OpenDate.ToString("HH:mm") com 
+                @cashRegister.InitialAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+            </p>
+            <form asp-controller="CashRegister" asp-action="Close" method="post" onsubmit="return confirm('Confirmar fechamento do caixa?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@cashRegister.Id" />
+                <input type="hidden" name="finalAmount" value="0" />
+                
+                <button type="submit" class="btn btn-danger btn-lg" style="width: 100%;">
+                    🔒 Fechar Caixa
+                </button>
+            </form>
+        </div>
+    }
 </div>

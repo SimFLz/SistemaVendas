@@ -51,7 +51,7 @@ namespace SalesManagement.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
 
                     b.HasData(
                         new
@@ -123,7 +123,7 @@ namespace SalesManagement.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Sales");
+                    b.ToTable("Sales", (string)null);
                 });
 
             modelBuilder.Entity("SalesManagement.Models.SaleItem", b =>
@@ -158,7 +158,7 @@ namespace SalesManagement.Migrations
 
                     b.HasIndex("SaleId");
 
-                    b.ToTable("SaleItems");
+                    b.ToTable("SaleItems", (string)null);
                 });
 
             modelBuilder.Entity("SalesManagement.Models.SaleItem", b =>

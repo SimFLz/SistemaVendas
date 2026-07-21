@@ -1,0 +1,137 @@
+﻿@model SalesManagement.Models.CashRegister
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = "Caixa Fechado";
+    Layout = null;
+
+    var totalRevenue = ViewData["TotalRevenue"] as decimal? ?? 0;
+    var totalSales = ViewData["TotalSales"] as int? ?? 0;
+    var salesByPayment = ViewData["SalesByPayment"] as Dictionary<PaymentMethod, decimal> ?? new Dictionary<PaymentMethod, decimal>();
+    var sales = ViewData["Sales"] as List<SalesManagement.Models.Sale> ?? new List<SalesManagement.Models.Sale>();
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caixa Fechado - SalesUP</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 2rem;
+        }
+        .closed-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 480px;
+        }
+        .closed-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .closed-header h2 {
+            color: var(--success);
+            margin-bottom: 0.25rem;
+        }
+        .closed-header p {
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="closed-box">
+        <div class="closed-header">
+            <div style="font-size: 3rem;">✅</div>
+            <h2>Caixa Fechado com Sucesso!</h2>
+            <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+
+        <!-- Notinha -->
+        <div class="receipt" style="max-width: 100%; margin: 0 0 1.5rem 0; border: 1px dashed #ccc; padding: 1rem;">
+            <div class="receipt-header" style="text-align: center; margin-bottom: 0.75rem;">
+                <h4 style="margin: 0;">🧾 SALESUP</h4>
+                <p style="margin: 0; font-size: 0.75rem;">Fechamento de Caixa #@Model.Id</p>
+                <p style="margin: 0; font-size: 0.75rem;">@Model.OpenDate.ToString("dd/MM/yyyy")</p>
+            </div>
+
+            <div style="font-size: 0.8rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Abertura:</span>
+                    <span>@Model.OpenDate.ToString("HH:mm")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Fechamento:</span>
+                    <span>@Model.CloseDate?.ToString("HH:mm")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Valor Inicial:</span>
+                    <span>@Model.InitialAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                    <span>Vendas do Dia:</span>
+                    <span>@totalSales</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--primary);">
+                    <span>Total Vendas:</span>
+                    <span>@totalRevenue.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+            </div>
+
+            @if (salesByPayment.Any())
+            {
+                <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem; font-size: 0.75rem;">
+                    <div style="font-weight: bold; margin-bottom: 0.25rem;">Por Pagamento:</div>
+                    @foreach (var item in salesByPayment)
+                    {
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>
+                                @(item.Key switch {
+                                    PaymentMethod.Cash => "💵 Dinheiro",
+                                    PaymentMethod.DebitCard => "💳 Débito",
+                                    PaymentMethod.CreditCard => "💳 Crédito",
+                                    PaymentMethod.Pix => "📱 PIX",
+                                    _ => item.Key.ToString()
+                                })
+                            </span>
+                            <span>@item.Value.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold;">
+                    <span>TOTAL EM CAIXA:</span>
+                    <span>@Model.FinalAmount?.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+            </div>
+
+            <div class="receipt-footer" style="text-align: center; margin-top: 0.5rem; font-size: 0.7rem;">
+                <p>Obrigado! 🙏</p>
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+            <button onclick="window.print()" class="btn btn-primary btn-lg" style="width: 100%;">
+                🖨️ Imprimir Notinha
+            </button>
+            <a href="/CashRegister" class="btn btn-success btn-lg" style="width: 100%; text-align: center;">
+                🔓 Abrir Caixa
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+﻿@model SalesManagement.Models.CashRegister
+@using SalesManagement.Models.Enums
+@{
+    ViewData["Title"] = ViewData["Type"]?.ToString() == "close" ? "Fechamento de Caixa" : "Abertura de Caixa";
+    var isClose = ViewData["Type"]?.ToString() == "close";
+    var totalRevenue = ViewData["TotalRevenue"] as decimal? ?? 0;
+    var totalSales = ViewData["TotalSales"] as int? ?? 0;
+    var salesByPayment = ViewData["SalesByPayment"] as Dictionary<PaymentMethod, decimal> ?? new Dictionary<PaymentMethod, decimal>();
+    var sales = ViewData["Sales"] as List<SalesManagement.Models.Sale> ?? new List<SalesManagement.Models.Sale>();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card" style="max-width: 420px; margin: 0 auto;">
+    <div class="receipt">
+        <div class="receipt-header">
+            <h3>🧾 SALESUP</h3>
+            <p>@(isClose ? "FECHAMENTO DE CAIXA" : "ABERTURA DE CAIXA")</p>
+            <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>Caixa #@Model.Id</p>
+        </div>
+
+        <div class="receipt-items">
+            <div class="receipt-item">
+                <span>Data de Abertura:</span>
+                <span>@Model.OpenDate.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            
+            @if (isClose && Model.CloseDate.HasValue)
+            {
+                <div class="receipt-item">
+                    <span>Data de Fechamento:</span>
+                    <span>@Model.CloseDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            }
+
+            <div class="receipt-item">
+                <span>Valor Inicial:</span>
+                <span>@Model.InitialAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+            </div>
+
+            @if (isClose)
+            {
+                <div class="receipt-item">
+                    <span>Valor Final:</span>
+                    <span>@Model.FinalAmount?.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+
+                <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem;">
+                    <div class="receipt-item">
+                        <span><strong>Total em Vendas:</strong></span>
+                        <span><strong>@totalRevenue.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</strong></span>
+                    </div>
+                    <div class="receipt-item">
+                        <span>Nº de Vendas:</span>
+                        <span>@totalSales</span>
+                    </div>
+                </div>
+
+                @if (salesByPayment.Any())
+                {
+                    <div style="margin-top: 0.5rem;">
+                        <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.25rem;">Por Forma de Pagamento:</div>
+                        @foreach (var item in salesByPayment)
+                        {
+                            <div class="receipt-item" style="font-size: 0.75rem;">
+                                <span>
+                                    @(item.Key switch {
+                                        PaymentMethod.Cash => "💵 Dinheiro",
+                                        PaymentMethod.DebitCard => "💳 Débito",
+                                        PaymentMethod.CreditCard => "💳 Crédito",
+                                        PaymentMethod.Pix => "📱 PIX",
+                                        _ => item.Key.ToString()
+                                    })
+                                </span>
+                                <span>@item.Value.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (sales.Any())
+                {
+                    <div style="margin-top: 0.5rem; border-top: 1px dashed #000; padding-top: 0.5rem;">
+                        <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.25rem;">Vendas do Dia:</div>
+                        @foreach (var sale in sales)
+                        {
+                            <div class="receipt-item" style="font-size: 0.7rem;">
+                                <span>#@sale.Id - @sale.SaleDate.ToString("HH:mm")</span>
+                                <span>@sale.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Observations))
+                {
+                    <div style="margin-top: 0.5rem; border-top: 1px dashed #000; padding-top: 0.5rem;">
+                        <div style="font-size: 0.75rem; font-weight: bold;">Observações:</div>
+                        <div style="font-size: 0.75rem;">@Model.Observations</div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="receipt-footer">
+            <p>@(isClose ? "Caixa fechado com sucesso!" : "Caixa aberto com sucesso!")</p>
+            <p>Obrigado! 🙏</p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button onclick="window.print()" class="btn btn-primary" style="flex: 1;">🖨️ Imprimir</button>
+        
+        @if (!isClose)
+        {
+            <a href="/Sales" class="btn btn-success" style="flex: 1;">🛒 Iniciar Vendas</a>
+        }
+        else
+        {
+            <a href="/Dashboard" class="btn btn-success" style="flex: 1;">📊 Dashboard</a>
+        }
+    </div>
+</div>
