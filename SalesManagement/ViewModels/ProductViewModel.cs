@@ -16,12 +16,8 @@ public class ProductViewModel
     [Display(Name = "Código")]
     public string Code { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "O preço é obrigatório.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "O preço deve ser maior que zero.")]
-    [Display(Name = "Preço")]
-    [DataType(DataType.Currency)]
-    public decimal Price { get; set; }
-
     [Display(Name = "Ativo")]
     public bool IsActive { get; set; } = true;
+
+    public List<ProductPriceViewModel> Prices { get; set; } = new List<ProductPriceViewModel>();
 }

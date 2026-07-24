@@ -35,7 +35,7 @@
             <table class="table" id="itemsTable">
                 <thead>
                     <tr>
-                        <th>Código</th>
+                        <th>Código de Barras</th>
                         <th>Produto</th>
                         <th>Qtd</th>
                         <th>Preço Unit.</th>
@@ -57,21 +57,21 @@
                     {
                         @foreach (var item in Model.Items)
                         {
-                            <tr data-product-id="@item.ProductId">
-                                <td>@item.ProductCode</td>
+                            <tr data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId">
+                                <td><code>@item.Barcode</code></td>
                                 <td>@item.ProductName</td>
                                 <td>
-                                    <input type="number" class="form-input qty-input" value="@item.Quantity" min="1" style="width: 60px;" data-product-id="@item.ProductId" />
+                                    <input type="number" class="form-input qty-input" value="@item.Quantity" min="1" style="width: 60px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td>
-                                    <input type="number" class="form-input price-input" value="@item.UnitPrice.ToString("F2")" step="0.01" min="0.01" style="width: 90px;" data-product-id="@item.ProductId" />
+                                    <input type="number" class="form-input price-input" value="@item.UnitPrice.ToString("F2")" step="0.01" min="0.01" style="width: 90px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td>
-                                    <input type="number" class="form-input discount-input" value="@item.Discount.ToString("F2")" step="0.01" min="0" style="width: 80px;" data-product-id="@item.ProductId" />
+                                    <input type="number" class="form-input discount-input" value="@item.Discount.ToString("F2")" step="0.01" min="0" style="width: 80px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td class="item-total">@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
                                 <td>
-                                    <button type="button" class="btn btn-danger btn-remove" data-product-id="@item.ProductId" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                                    <button type="button" class="btn btn-danger btn-remove" data-price-id="@item.ProductPriceId" style="padding: 0.25rem 0.5rem;">🗑️</button>
                                 </td>
                             </tr>
                         }
@@ -109,7 +109,7 @@
             <span>TOTAL:</span>
             <span id="totalAmount" style="color: var(--primary);">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
         </div>
-
+        
         <form asp-action="Finalize" method="post" id="finalizeForm" style="margin-top: 1.5rem;">
             @Html.AntiForgeryToken()
 
@@ -252,23 +252,23 @@
                 document.getElementById('btnFinalize').disabled = true;
             } else {
                 tbody.innerHTML = cart.items.map(item => `
-                    <tr data-product-id="${item.productId}">
-                        <td>${item.productCode}</td>
-                        <td>${item.productName}</td>
-                        <td>
-                            <input type="number" class="form-input qty-input" value="${item.quantity}" min="1" style="width: 60px;" data-product-id="${item.productId}" />
-                        </td>
-                        <td>
-                            <input type="number" class="form-input price-input" value="${item.unitPrice.toFixed(2)}" step="0.01" min="0.01" style="width: 90px;" data-product-id="${item.productId}" />
-                        </td>
-                        <td>
-                            <input type="number" class="form-input discount-input" value="${item.discount.toFixed(2)}" step="0.01" min="0" style="width: 80px;" data-product-id="${item.productId}" />
-                        </td>
-                        <td class="item-total">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-remove" data-product-id="${item.productId}" style="padding: 0.25rem 0.5rem;">🗑️</button>
-                        </td>
-                    </tr>
+                                           <tr data-product-id="${item.productId}" data-price-id="${item.productPriceId}">
+                            <td><code>${item.barcode}</code></td>
+                            <td>${item.productName}</td>
+                            <td>
+                                <input type="number" class="form-input qty-input" value="${item.quantity}" min="1" style="width: 60px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
+                            </td>
+                            <td>
+                                <input type="number" class="form-input price-input" value="${item.unitPrice.toFixed(2)}" step="0.01" min="0.01" style="width: 90px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
+                            </td>
+                            <td>
+                                <input type="number" class="form-input discount-input" value="${item.discount.toFixed(2)}" step="0.01" min="0" style="width: 80px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
+                            </td>
+                            <td class="item-total">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-remove" data-price-id="${item.productPriceId}" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                            </td>
+                        </tr>
                 `).join('');
                 document.getElementById('btnFinalize').disabled = false;
             }

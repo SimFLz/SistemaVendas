@@ -39,21 +39,23 @@ public class SalesController : Controller
         return View(viewModel);
     }
 
-    // POST: /Sales/AddItem (AJAX)
+    // POST: /Sales/AddItem (AJAX) — busca APENAS por código de barras completo
     [HttpPost]
     public async Task<IActionResult> AddItem(string productCode)
     {
-        var product = await _context.Products
-            .FirstOrDefaultAsync(p => p.Code == productCode && p.IsActive);
+        // 🔧 AGORA SÓ ACEITA O CÓDIGO DE BARRAS COMPLETO (ex: 00139990)
+        var productPrice = await _context.ProductPrices
+            .Include(pp => pp.Product)
+            .FirstOrDefaultAsync(pp => pp.Barcode == productCode && pp.Product.IsActive);
 
-        if (product == null)
+        if (productPrice == null)
         {
-            return Json(new { success = false, message = "Produto não encontrado." });
+            return Json(new { success = false, message = "Produto não encontrado. Use o código de barras completo (ex: 00139990)." });
         }
 
         var cart = GetCartFromSession();
 
-        var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == product.Id);
+        var existingItem = cart.Items.FirstOrDefault(i => i.ProductPriceId == productPrice.Id);
         if (existingItem != null)
         {
             existingItem.Quantity++;
@@ -62,10 +64,12 @@ public class SalesController : Controller
         {
             cart.Items.Add(new SaleItemViewModel
             {
-                ProductId = product.Id,
-                ProductName = product.Name,
-                ProductCode = product.Code,
-                UnitPrice = product.Price,
+                ProductId = productPrice.ProductId,
+                ProductPriceId = productPrice.Id,
+                ProductName = productPrice.Product.Name,
+                ProductCode = productPrice.Product.Code,
+                Barcode = productPrice.Barcode,
+                UnitPrice = productPrice.Price,
                 Quantity = 1
             });
         }
@@ -74,9 +78,9 @@ public class SalesController : Controller
         return Json(new { success = true, cart = cart });
     }
 
-    // POST: /Sales/UpdateQuantity (AJAX)
+    // POST: /Sales/UpdateQuantity (AJAX) — agora por productPriceId
     [HttpPost]
-    public IActionResult UpdateQuantity(int productId, int quantity)
+    public IActionResult UpdateQuantity(int productPriceId, int quantity)
     {
         if (quantity < 1)
         {
@@ -84,7 +88,7 @@ public class SalesController : Controller
         }
 
         var cart = GetCartFromSession();
-        var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+        var item = cart.Items.FirstOrDefault(i => i.ProductPriceId == productPriceId);
 
         if (item == null)
         {
@@ -96,9 +100,9 @@ public class SalesController : Controller
         return Json(new { success = true, cart = cart });
     }
 
-    // POST: /Sales/UpdatePrice (AJAX)
+    // POST: /Sales/UpdatePrice (AJAX) — agora por productPriceId
     [HttpPost]
-    public IActionResult UpdatePrice(int productId, decimal newPrice)
+    public IActionResult UpdatePrice(int productPriceId, decimal newPrice)
     {
         if (newPrice <= 0)
         {
@@ -106,7 +110,7 @@ public class SalesController : Controller
         }
 
         var cart = GetCartFromSession();
-        var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+        var item = cart.Items.FirstOrDefault(i => i.ProductPriceId == productPriceId);
 
         if (item == null)
         {
@@ -118,12 +122,12 @@ public class SalesController : Controller
         return Json(new { success = true, cart = cart });
     }
 
-    // POST: /Sales/ApplyDiscount (AJAX)
+    // POST: /Sales/ApplyDiscount (AJAX) — agora por productPriceId
     [HttpPost]
-    public IActionResult ApplyDiscount(int productId, decimal discount)
+    public IActionResult ApplyDiscount(int productPriceId, decimal discount)
     {
         var cart = GetCartFromSession();
-        var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+        var item = cart.Items.FirstOrDefault(i => i.ProductPriceId == productPriceId);
 
         if (item == null)
         {
@@ -141,12 +145,12 @@ public class SalesController : Controller
         return Json(new { success = true, cart = cart });
     }
 
-    // POST: /Sales/RemoveItem (AJAX)
+    // POST: /Sales/RemoveItem (AJAX) — agora por productPriceId
     [HttpPost]
-    public IActionResult RemoveItem(int productId)
+    public IActionResult RemoveItem(int productPriceId)
     {
         var cart = GetCartFromSession();
-        var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+        var item = cart.Items.FirstOrDefault(i => i.ProductPriceId == productPriceId);
 
         if (item == null)
         {
@@ -207,6 +211,7 @@ public class SalesController : Controller
             {
                 SaleId = sale.Id,
                 ProductId = item.ProductId,
+                ProductPriceId = item.ProductPriceId, // 🔧 CORRIGIDO: agora salva o preço vendido
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 Discount = item.Discount,

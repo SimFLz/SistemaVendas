@@ -13,6 +13,9 @@ public class SaleItem
     [Required]
     public int ProductId { get; set; }
 
+    [Required]
+    public int ProductPriceId { get; set; }
+
     [Required(ErrorMessage = "A quantidade é obrigatória.")]
     [Range(1, int.MaxValue, ErrorMessage = "A quantidade deve ser pelo menos 1.")]
     [Display(Name = "Quantidade")]
@@ -38,4 +41,5 @@ public class SaleItem
     // Navegação
     public Sale Sale { get; set; } = null!;
     public Product Product { get; set; } = null!;
+    public ProductPrice ProductPrice { get; set; } = null!;
 }

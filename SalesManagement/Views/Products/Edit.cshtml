@@ -1,9 +1,9 @@
-﻿@model SalesManagement.Models.Product
+﻿@model SalesManagement.ViewModels.ProductViewModel
 @{
     ViewData["Title"] = "Editar Produto";
 }
 
-<div class="card" style="max-width: 600px;">
+<div class="card" style="max-width: 800px;">
     <div class="card-header">
         <span class="card-title">✏️ Editar Produto</span>
     </div>
@@ -11,7 +11,7 @@
     <form asp-action="Edit" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.IsValid ? "none" : "block");"></div>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
         <div class="form-group">
             <label asp-for="Name" class="form-label"></label>
@@ -21,14 +21,8 @@
 
         <div class="form-group">
             <label asp-for="Code" class="form-label"></label>
-            <input asp-for="Code" class="form-input" />
+            <input asp-for="Code" class="form-input" id="productCode" />
             <span asp-validation-for="Code" style="color: var(--danger); font-size: 0.875rem;"></span>
-        </div>
-
-        <div class="form-group">
-            <label asp-for="Price" class="form-label"></label>
-            <input asp-for="Price" class="form-input" type="number" step="0.01" min="0.01" />
-            <span asp-validation-for="Price" style="color: var(--danger); font-size: 0.875rem;"></span>
         </div>
 
         <div class="form-group">
@@ -36,6 +30,56 @@
                 <input asp-for="IsActive" type="checkbox" />
                 <span>Ativo</span>
             </label>
+        </div>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
+
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <span class="card-title">💰 Preços</span>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" inputmode="decimal" id="newPrice" class="form-input" placeholder="Preço (ex: 39,90)" style="flex: 1;" />
+            <button type="button" id="btnAddPrice" class="btn btn-primary">+ Adicionar Preço</button>
+        </div>
+        <span id="priceError" style="color: var(--danger); font-size: 0.875rem; display: none;"></span>
+
+        <div class="table-container">
+            <table class="table" id="pricesTable">
+                <thead>
+                    <tr>
+                        <th>Código de Barras</th>
+                        <th>Preço</th>
+                        <th style="width: 100px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="pricesTableBody">
+                    @if (Model.Prices.Any())
+                    {
+                        @for (int i = 0; i < Model.Prices.Count; i++)
+                        {
+                            <tr>
+                                <td><code>@Model.Prices[i].Barcode</code></td>
+                                <td>@Model.Prices[i].Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-remove-existing" data-price-id="@Model.Prices[i].Id" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                                </td>
+                            </tr>
+                            <input type="hidden" name="Prices[@i].Id" value="@Model.Prices[i].Id" />
+                            <input type="hidden" name="Prices[@i].Price" value="@Model.Prices[i].Price.ToString("F2", new System.Globalization.CultureInfo("pt-BR"))" />
+                            <input type="hidden" name="Prices[@i].Barcode" value="@Model.Prices[i].Barcode" />
+                        }
+                    }
+                    else
+                    {
+                        <tr id="emptyPricesRow">
+                            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">
+                                Nenhum preço adicionado.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
 
         <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
@@ -46,5 +90,123 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let prices = [];
+        const productCodeInput = document.getElementById('productCode');
+        const newPriceInput = document.getElementById('newPrice');
+        const btnAddPrice = document.getElementById('btnAddPrice');
+        const pricesTableBody = document.getElementById('pricesTableBody');
+        const priceError = document.getElementById('priceError');
+
+        @if (Model.Prices.Any())
+        {
+                @foreach (var price in Model.Prices)
+                {
+                        @:prices.push({ id: @price.Id, price: '@price.Price.ToString("F2", new System.Globalization.CultureInfo("pt-BR"))', barcode: '@price.Barcode', existing: true });
+                }
+        }
+
+        function generateBarcode(code, price) {
+            const priceStr = parseFloat(price).toFixed(2).replace(',', '').replace('.', '');
+            return code + priceStr;
+        }
+
+        function renderPrices() {
+            if (prices.length === 0) {
+                pricesTableBody.innerHTML = `
+                    <tr id="emptyPricesRow">
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">
+                            Nenhum preço adicionado.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            pricesTableBody.innerHTML = prices.map((p, index) => `
+                <tr>
+                    <td><code>${p.barcode}</code></td>
+                    <td>R$ ${parseFloat(p.price.replace(',', '.')).toFixed(2).replace('.', ',')}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="removePrice(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                    </td>
+                </tr>
+                <input type="hidden" name="Prices[${index}].Price" value="${parseFloat(p.price.replace(',', '.')).toFixed(2).replace('.', ',')}" />
+                <input type="hidden" name="Prices[${index}].Barcode" value="${p.barcode}" />
+                ${p.id ? `<input type="hidden" name="Prices[${index}].Id" value="${p.id}" />` : ''}
+            `).join('');
+        }
+
+        btnAddPrice.addEventListener('click', function() {
+            const code = productCodeInput.value.trim();
+            const priceValue = newPriceInput.value.replace(',', '.');
+            const price = parseFloat(priceValue);
+
+            priceError.style.display = 'none';
+
+            if (!code) {
+                priceError.textContent = 'Digite o código do produto primeiro.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            if (!price || price <= 0 || isNaN(price)) {
+                priceError.textContent = 'Digite um preço válido.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            if (prices.some(p => Math.abs(parseFloat(p.price.replace(',', '.')) - price) < 0.001)) {
+                priceError.textContent = 'Este preço já foi adicionado.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            const barcode = generateBarcode(code, price);
+            prices.push({ price: price.toFixed(2).replace('.', ','), barcode: barcode, existing: false });
+
+            newPriceInput.value = '';
+            newPriceInput.focus();
+            renderPrices();
+        });
+
+        function removePrice(index) {
+            prices.splice(index, 1);
+            renderPrices();
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-remove-existing')) {
+                const priceId = e.target.dataset.priceId;
+                if (confirm('Excluir este preço?')) {
+                    fetch('/Products/RemovePrice', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: `priceId=${priceId}`
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            e.target.closest('tr').remove();
+                            prices = prices.filter(p => p.id != priceId);
+                            if (prices.length === 0) {
+                                renderPrices();
+                            }
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+                }
+            }
+        });
+
+        newPriceInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnAddPrice.click();
+            }
+        });
+    </script>
 }

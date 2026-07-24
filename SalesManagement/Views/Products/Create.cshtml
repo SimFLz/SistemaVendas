@@ -1,16 +1,16 @@
-﻿@model SalesManagement.Models.Product
+﻿@model SalesManagement.ViewModels.ProductViewModel
 @{
     ViewData["Title"] = "Novo Produto";
 }
 
-<div class="card" style="max-width: 600px;">
+<div class="card" style="max-width: 800px;">
     <div class="card-header">
         <span class="card-title">📦 Novo Produto</span>
     </div>
 
-    <form asp-action="Create" method="post">
+    <form asp-action="Create" method="post" id="productForm">
         @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.IsValid ? "none" : "block");"></div>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
         <div class="form-group">
             <label asp-for="Name" class="form-label"></label>
@@ -20,14 +20,8 @@
 
         <div class="form-group">
             <label asp-for="Code" class="form-label"></label>
-            <input asp-for="Code" class="form-input" placeholder="Ex: 001" />
+            <input asp-for="Code" class="form-input" placeholder="Ex: 001" id="productCode" />
             <span asp-validation-for="Code" style="color: var(--danger); font-size: 0.875rem;"></span>
-        </div>
-
-        <div class="form-group">
-            <label asp-for="Price" class="form-label"></label>
-            <input asp-for="Price" class="form-input" type="number" step="0.01" min="0.01" placeholder="49,90" />
-            <span asp-validation-for="Price" style="color: var(--danger); font-size: 0.875rem;"></span>
         </div>
 
         <div class="form-group">
@@ -37,6 +31,40 @@
             </label>
         </div>
 
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
+
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <span class="card-title">💰 Preços</span>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" inputmode="decimal" id="newPrice" class="form-input" placeholder="Preço (ex: 39,90)" style="flex: 1;" />
+            <button type="button" id="btnAddPrice" class="btn btn-primary">+ Adicionar Preço</button>
+        </div>
+        <span id="priceError" style="color: var(--danger); font-size: 0.875rem; display: none;"></span>
+
+        <div class="table-container">
+            <table class="table" id="pricesTable">
+                <thead>
+                    <tr>
+                        <th>Código de Barras</th>
+                        <th>Preço</th>
+                        <th style="width: 100px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="pricesTableBody">
+                    <tr id="emptyPricesRow">
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">
+                            Nenhum preço adicionado.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Inputs hidden para enviar os preços -->
+        <div id="hiddenPrices"></div>
+
         <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
             <button type="submit" class="btn btn-primary">💾 Salvar</button>
             <a href="/Products" class="btn btn-secondary">← Voltar</a>
@@ -45,5 +73,92 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let prices = [];
+        const productCodeInput = document.getElementById('productCode');
+        const newPriceInput = document.getElementById('newPrice');
+        const btnAddPrice = document.getElementById('btnAddPrice');
+        const pricesTableBody = document.getElementById('pricesTableBody');
+        const emptyPricesRow = document.getElementById('emptyPricesRow');
+        const hiddenPricesDiv = document.getElementById('hiddenPrices');
+        const priceError = document.getElementById('priceError');
+
+        function generateBarcode(code, price) {
+            const priceStr = parseFloat(price).toFixed(2).replace(',', '').replace('.', '');
+            return code + priceStr;
+        }
+
+        function renderPrices() {
+            if (prices.length === 0) {
+                pricesTableBody.innerHTML = `
+                    <tr id="emptyPricesRow">
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">
+                            Nenhum preço adicionado.
+                        </td>
+                    </tr>`;
+                hiddenPricesDiv.innerHTML = '';
+                return;
+            }
+
+            pricesTableBody.innerHTML = prices.map((p, index) => `
+                <tr>
+                    <td><code>${p.barcode}</code></td>
+                    <td>R$ ${parseFloat(p.price).toFixed(2).replace('.', ',')}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="removePrice(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // 🔧 CORREÇÃO: enviar com VÍRGULA para o model binder pt-BR entender 39,90 corretamente
+            hiddenPricesDiv.innerHTML = prices.map((p, index) => `
+                <input type="hidden" name="Prices[${index}].Price" value="${parseFloat(p.price).toFixed(2).replace('.', ',')}" />
+            `).join('');
+        }
+
+        btnAddPrice.addEventListener('click', function() {
+            const code = productCodeInput.value.trim();
+            const priceValue = newPriceInput.value.replace(',', '.');
+            const price = parseFloat(priceValue);
+
+            priceError.style.display = 'none';
+
+            if (!code) {
+                priceError.textContent = 'Digite o código do produto primeiro.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            if (!price || price <= 0 || isNaN(price)) {
+                priceError.textContent = 'Digite um preço válido.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            if (prices.some(p => Math.abs(parseFloat(p.price) - price) < 0.001)) {
+                priceError.textContent = 'Este preço já foi adicionado.';
+                priceError.style.display = 'block';
+                return;
+            }
+
+            const barcode = generateBarcode(code, price);
+            prices.push({ price: price, barcode: barcode });
+
+            newPriceInput.value = '';
+            newPriceInput.focus();
+            renderPrices();
+        });
+
+        function removePrice(index) {
+            prices.splice(index, 1);
+            renderPrices();
+        }
+
+        newPriceInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnAddPrice.click();
+            }
+        });
+    </script>
 }

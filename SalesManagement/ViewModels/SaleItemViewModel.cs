@@ -3,8 +3,10 @@
 public class SaleItemViewModel
 {
     public int ProductId { get; set; }
+    public int ProductPriceId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string ProductCode { get; set; } = string.Empty;
+    public string Barcode { get; set; } = string.Empty;
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; } = 1;
     public decimal Discount { get; set; } = 0;

@@ -1,11 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// 🔧 CONFIGURAR CULTURA pt-BR para decimais com vírgula (39,90)
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { new CultureInfo("pt-BR") };
+    options.DefaultRequestCulture = new RequestCulture("pt-BR");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+});
 
 // Configurar Session (carrinho de vendas + caixa)
 builder.Services.AddDistributedMemoryCache();
@@ -32,6 +42,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// 🔧 APLICAR LOCALIZAÇÃO pt-BR (DEVE VIR ANTES DO ROUTING)
+app.UseRequestLocalization();
+
 app.UseRouting();
 app.UseSession();
 app.UseAuthorization();

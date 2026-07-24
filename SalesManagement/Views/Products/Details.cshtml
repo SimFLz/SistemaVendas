@@ -3,7 +3,7 @@
     ViewData["Title"] = "Detalhes do Produto";
 }
 
-<div class="card" style="max-width: 600px;">
+<div class="card" style="max-width: 700px;">
     <div class="card-header">
         <span class="card-title">👁️ Detalhes do Produto</span>
     </div>
@@ -20,11 +20,6 @@
         </div>
 
         <div style="margin-bottom: 1rem;">
-            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Preço</label>
-            <p style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">@Model.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</p>
-        </div>
-
-        <div style="margin-bottom: 1rem;">
             <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Status</label>
             <p>
                 @if (Model.IsActive)
@@ -36,6 +31,29 @@
                     <span style="color: var(--danger);">✗ Inativo</span>
                 }
             </p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Preços</label>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Código de Barras</th>
+                            <th>Preço</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var price in Model.Prices.OrderBy(p => p.Price))
+                        {
+                            <tr>
+                                <td><code>@price.Barcode</code></td>
+                                <td>@price.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

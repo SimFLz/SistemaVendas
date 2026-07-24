@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SalesManagement.Models;
 
@@ -17,16 +16,10 @@ public class Product
     [Display(Name = "Código")]
     public string Code { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "O preço é obrigatório.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "O preço deve ser maior que zero.")]
-    [Column(TypeName = "decimal(18,2)")]
-    [Display(Name = "Preço")]
-    [DataType(DataType.Currency)]
-    public decimal Price { get; set; }
-
     [Display(Name = "Ativo")]
     public bool IsActive { get; set; } = true;
 
     // Navegação
+    public ICollection<ProductPrice> Prices { get; set; } = new List<ProductPrice>();
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

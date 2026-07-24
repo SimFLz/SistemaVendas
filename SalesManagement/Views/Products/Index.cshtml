@@ -34,7 +34,7 @@
                 <tr>
                     <th>Código</th>
                     <th>Nome</th>
-                    <th>Preço</th>
+                    <th>Preços</th>
                     <th>Status</th>
                     <th style="width: 200px;">Ações</th>
                 </tr>
@@ -45,7 +45,23 @@
                     <tr>
                         <td><strong>@item.Code</strong></td>
                         <td>@item.Name</td>
-                        <td>@item.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                        <td>
+                            @if (item.Prices.Any())
+                            {
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                    @foreach (var price in item.Prices.OrderBy(p => p.Price))
+                                    {
+                                        <span style="background: var(--bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                                            @price.Price.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Sem preços</span>
+                            }
+                        </td>
                         <td>
                             @if (item.IsActive)
                             {
