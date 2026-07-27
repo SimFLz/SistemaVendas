@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
@@ -6,7 +7,7 @@ using SalesManagement.Models.Enums;
 using SalesManagement.ViewModels;
 
 namespace SalesManagement.Controllers;
-
+[Authorize]
 public class ReportsController : Controller
 {
     private readonly ApplicationDbContext _context;

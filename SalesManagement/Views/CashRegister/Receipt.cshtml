@@ -208,9 +208,21 @@
 
         <div class="screen-card">
             <div class="receipt">
-                <div class="receipt-header">
-                    <div class="store-name">SALESUP</div>
+                                <div class="receipt-header">
+                    <div class="store-name">@(ViewData["StoreName"] ?? "SALESUP")</div>
                     <div class="store-sub">@(isClose ? "FECHAMENTO DE CAIXA" : "ABERTURA DE CAIXA")</div>
+                    @if (ViewData["StoreCnpj"] != null)
+                    {
+                        <div class="store-info">CNPJ: @ViewData["StoreCnpj"]</div>
+                    }
+                    @if (ViewData["StoreAddress"] != null)
+                    {
+                        <div class="store-info">@ViewData["StoreAddress"]</div>
+                    }
+                    @if (ViewData["StorePhone"] != null)
+                    {
+                        <div class="store-info">Tel: @ViewData["StorePhone"]</div>
+                    }
                     <div class="store-info">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
                     <div class="store-info">Caixa #@Model.Id</div>
                 </div>

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
 using SalesManagement.Models;
@@ -6,6 +7,7 @@ using SalesManagement.Models.Enums;
 
 namespace SalesManagement.Controllers;
 
+[Authorize]
 public class CashRegisterController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -74,6 +76,7 @@ public class CashRegisterController : Controller
     }
 
     // GET: /CashRegister/Receipt/5?type=open
+    // GET: /CashRegister/Receipt/5?type=open
     public async Task<IActionResult> Receipt(int? id, string type)
     {
         if (id == null) return NotFound();
@@ -81,10 +84,16 @@ public class CashRegisterController : Controller
         var cashRegister = await _context.CashRegisters.FindAsync(id);
         if (cashRegister == null) return NotFound();
 
+        // 🔧 DADOS DA LOJA NA NOTINHA
+        var store = await _context.Users.FirstOrDefaultAsync();
+        ViewData["StoreName"] = store?.StoreName ?? "SALESUP";
+        ViewData["StoreCnpj"] = store?.Cnpj;
+        ViewData["StoreAddress"] = store?.StoreAddress;
+        ViewData["StorePhone"] = store?.StorePhone;
+
         ViewData["Type"] = type;
         ViewData["Title"] = type == "close" ? "Fechamento de Caixa" : "Abertura de Caixa";
 
-        // Se for fechamento, buscar vendas do dia
         if (type == "close")
         {
             var today = cashRegister.OpenDate.Date;
@@ -149,6 +158,7 @@ public class CashRegisterController : Controller
     }
 
     // GET: /CashRegister/Closed/5
+    // GET: /CashRegister/Closed/5
     public async Task<IActionResult> Closed(int? id)
     {
         if (id == null) return NotFound();
@@ -156,9 +166,15 @@ public class CashRegisterController : Controller
         var cashRegister = await _context.CashRegisters.FindAsync(id);
         if (cashRegister == null) return NotFound();
 
+        // 🔧 DADOS DA LOJA NA NOTINHA
+        var store = await _context.Users.FirstOrDefaultAsync();
+        ViewData["StoreName"] = store?.StoreName ?? "SALESUP";
+        ViewData["StoreCnpj"] = store?.Cnpj;
+        ViewData["StoreAddress"] = store?.StoreAddress;
+        ViewData["StorePhone"] = store?.StorePhone;
+
         ViewData["Title"] = "Caixa Fechado";
 
-        // Buscar vendas desde a abertura até o fechamento deste caixa específico
         var sales = await _context.Sales
             .Where(s => s.SaleDate >= cashRegister.OpenDate
                      && s.SaleDate <= (cashRegister.CloseDate ?? DateTime.Now)

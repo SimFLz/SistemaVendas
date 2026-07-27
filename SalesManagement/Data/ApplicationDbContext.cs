@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext
     {
     }
 
+    public DbSet<User> Users { get; set; } = null!;
     public DbSet<Product> Products { get; set; } = null!;
     public DbSet<ProductPrice> ProductPrices { get; set; } = null!;
     public DbSet<Sale> Sales { get; set; } = null!;
@@ -36,6 +37,20 @@ public class ApplicationDbContext : DbContext
             .WithMany(p => p.Prices)
             .HasForeignKey(pp => pp.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+        // Seed usuário admin padrão
+        modelBuilder.Entity<User>().HasData(
+            new User
+            {
+                Id = 1,
+                Email = "admin@salesup.com",
+                PasswordHash = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+                StoreName = "SALESUP",
+                Cnpj = "00.000.000/0000-00",
+                StoreAddress = "Rua Exemplo, 123 - Centro",
+                StorePhone = "(11) 99999-9999",
+                IsAdmin = true
+            }
+        );
 
         // Relacionamentos SaleItem
         modelBuilder.Entity<SaleItem>()

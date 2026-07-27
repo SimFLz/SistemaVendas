@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,17 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 });
+
+// 🔧 AUTHENTICATION E AUTHORIZATION
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
+
+builder.Services.AddAuthorization();
 
 // Configurar Session (carrinho de vendas + caixa)
 builder.Services.AddDistributedMemoryCache();
@@ -43,11 +55,14 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// 🔧 APLICAR LOCALIZAÇÃO pt-BR (DEVE VIR ANTES DO ROUTING)
+// 🔧 APLICAR LOCALIZAÇÃO pt-BR
 app.UseRequestLocalization();
 
 app.UseRouting();
 app.UseSession();
+
+// 🔧 ORDEM CORRETA: Authentication ANTES de Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

@@ -161,9 +161,21 @@
 <body>
     <div class="receipt-box">
         <div class="receipt">
-            <div class="receipt-header">
-                <h3>🧾 SALESUP</h3>
+                        <div class="receipt-header">
+                <h3>🧾 @(ViewData["StoreName"] ?? "SALESUP")</h3>
                 <p>CUPOM FISCAL</p>
+                @if (ViewData["StoreCnpj"] != null)
+                {
+                    <p>CNPJ: @ViewData["StoreCnpj"]</p>
+                }
+                @if (ViewData["StoreAddress"] != null)
+                {
+                    <p>@ViewData["StoreAddress"]</p>
+                }
+                @if (ViewData["StorePhone"] != null)
+                {
+                    <p>Tel: @ViewData["StorePhone"]</p>
+                }
                 <p>@Model.SaleDate.ToString("dd/MM/yyyy HH:mm")</p>
                 <p>Venda #@Model.Id</p>
             </div>

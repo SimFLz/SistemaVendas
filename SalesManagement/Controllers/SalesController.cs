@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
@@ -6,7 +7,7 @@ using SalesManagement.Models.Enums;
 using SalesManagement.ViewModels;
 
 namespace SalesManagement.Controllers;
-
+[Authorize]
 public class SalesController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -228,6 +229,7 @@ public class SalesController : Controller
     }
 
     // GET: /Sales/Receipt/5 (Notinha da venda)
+    
     public async Task<IActionResult> Receipt(int? id)
     {
         if (id == null) return NotFound();
@@ -238,6 +240,13 @@ public class SalesController : Controller
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (sale == null) return NotFound();
+
+        // 🔧 DADOS DA LOJA NA NOTINHA
+        var store = await _context.Users.FirstOrDefaultAsync();
+        ViewData["StoreName"] = store?.StoreName ?? "SALESUP";
+        ViewData["StoreCnpj"] = store?.Cnpj;
+        ViewData["StoreAddress"] = store?.StoreAddress;
+        ViewData["StorePhone"] = store?.StorePhone;
 
         ViewData["Title"] = $"Notinha - Venda #{sale.Id}";
         return View(sale);
