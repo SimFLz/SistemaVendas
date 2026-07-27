@@ -19,7 +19,7 @@
         <div class="form-group">
             <label class="form-label">Código do Produto</label>
             <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="productCode" class="form-input" placeholder="Digite o código e pressione Enter" autofocus />
+                <input type="text" id="productCode" class="form-input" placeholder="Digite o código de barras completo (ex: 00139990) e pressione Enter" autofocus />
                 <button type="button" id="btnAddProduct" class="btn btn-primary">➕</button>
             </div>
             <span id="addProductError" style="color: var(--danger); font-size: 0.875rem; display: none;"></span>
@@ -61,13 +61,13 @@
                                 <td><code>@item.Barcode</code></td>
                                 <td>@item.ProductName</td>
                                 <td>
-                                    <input type="number" class="form-input qty-input" value="@item.Quantity" min="1" style="width: 60px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
+                                    <input type="text" inputmode="numeric" class="form-input qty-input" value="@item.Quantity" min="1" style="width: 60px;" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td>
-                                    <input type="number" class="form-input price-input" value="@item.UnitPrice.ToString("F2")" step="0.01" min="0.01" style="width: 90px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
+                                    <input type="text" inputmode="decimal" class="form-input price-input" value="@item.UnitPrice.ToString("F2", new System.Globalization.CultureInfo("pt-BR"))" style="width: 90px;" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td>
-                                    <input type="number" class="form-input discount-input" value="@item.Discount.ToString("F2")" step="0.01" min="0" style="width: 80px;" data-product-id="@item.ProductId" data-price-id="@item.ProductPriceId" />
+                                    <input type="text" inputmode="decimal" class="form-input discount-input" value="@item.Discount.ToString("F2", new System.Globalization.CultureInfo("pt-BR"))" style="width: 80px;" data-price-id="@item.ProductPriceId" />
                                 </td>
                                 <td class="item-total">@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
                                 <td>
@@ -99,7 +99,7 @@
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="color: var(--text-muted);">Desconto Geral:</span>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="number" id="generalDiscount" class="form-input" value="@Model.GeneralDiscount.ToString("F2")" step="0.01" min="0" style="width: 90px;" />
+                    <input type="text" inputmode="decimal" id="generalDiscount" class="form-input" value="@Model.GeneralDiscount.ToString("F2", new System.Globalization.CultureInfo("pt-BR"))" style="width: 90px;" />
                     <button type="button" id="btnApplyGeneralDiscount" class="btn btn-secondary" style="padding: 0.375rem 0.75rem;">Aplicar</button>
                 </div>
             </div>
@@ -109,25 +109,49 @@
             <span>TOTAL:</span>
             <span id="totalAmount" style="color: var(--primary);">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
         </div>
-        
+
         <form asp-action="Finalize" method="post" id="finalizeForm" style="margin-top: 1.5rem;">
             @Html.AntiForgeryToken()
 
+            <!-- 🔧 BOTÕES DE PAGAMENTO -->
             <div class="form-group">
-                <label asp-for="PaymentMethod" class="form-label">Forma de Pagamento *</label>
-                <select asp-for="PaymentMethod" class="form-select" required>
-                    <option value="">Selecione...</option>
-                    <option value="@PaymentMethod.Cash">💵 Dinheiro</option>
-                    <option value="@PaymentMethod.DebitCard">💳 Cartão de Débito</option>
-                    <option value="@PaymentMethod.CreditCard">💳 Cartão de Crédito</option>
-                    <option value="@PaymentMethod.Pix">📱 PIX</option>
-                </select>
+                <label class="form-label">Forma de Pagamento *</label>
+                <div class="payment-methods">
+                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.Cash" onclick="selectPayment(this)">
+                        💵 Dinheiro
+                    </button>
+                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.DebitCard" onclick="selectPayment(this)">
+                        💳 Débito
+                    </button>
+                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.CreditCard" onclick="selectPayment(this)">
+                        💳 Crédito
+                    </button>
+                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.Pix" onclick="selectPayment(this)">
+                        📱 PIX
+                    </button>
+                </div>
+                <input type="hidden" asp-for="PaymentMethod" id="paymentMethodInput" required />
                 <span asp-validation-for="PaymentMethod" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg" style="width: 100%; margin-top: 1rem;" @(Model.Items.Count == 0 ? "disabled" : "") id="btnFinalize">
+            <!-- 🔧 PARCELAS (só aparece no crédito) -->
+            <div class="form-group" id="installmentsGroup" style="display: none;">
+                <label asp-for="Installments" class="form-label">Parcelas</label>
+                <select asp-for="Installments" class="form-select" id="installmentsSelect">
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <option value="@i">@i x @(i == 1 ? "à vista" : "")</option>
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg" style="width: 100%; margin-top: 1rem;" id="btnFinalize">
                 ✅ Finalizar Venda
             </button>
+
+            <div id="finalizeError" style="color: var(--danger); font-size: 0.875rem; text-align: center; margin-top: 0.5rem; display: none;">
+                ⚠️ Adicione pelo menos um produto para finalizar a venda.
+            </div>
         </form>
 
         <a href="/Sales" class="btn btn-secondary" style="width: 100%; margin-top: 0.75rem;">← Cancelar</a>
@@ -136,7 +160,30 @@
 
 @section Scripts {
     <script>
-        // Adicionar produto por código
+        function parsePtBr(value) {
+            return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
+        function formatPtBr(value) {
+            return value.toFixed(2).replace('.', ',');
+        }
+
+        // Seleção de pagamento
+        function selectPayment(btn) {
+            document.querySelectorAll('.btn-payment').forEach(b => b.classList.remove('active-payment'));
+            btn.classList.add('active-payment');
+            document.getElementById('paymentMethodInput').value = btn.dataset.value;
+
+            const instGroup = document.getElementById('installmentsGroup');
+            if (btn.dataset.value === 'CreditCard') {
+                instGroup.style.display = 'block';
+            } else {
+                instGroup.style.display = 'none';
+                document.getElementById('installmentsSelect').value = '1';
+            }
+        }
+
+        // Adicionar produto
         document.getElementById('btnAddProduct').addEventListener('click', addProduct);
         document.getElementById('productCode').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -176,47 +223,44 @@
         // Atualizar quantidade
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('qty-input')) {
-                const productId = e.target.dataset.productId;
+                const productPriceId = e.target.dataset.priceId;
                 const quantity = parseInt(e.target.value);
                 if (quantity < 1) { e.target.value = 1; return; }
-
-                updateItem('/Sales/UpdateQuantity', `productId=${productId}&quantity=${quantity}`);
+                updateItem('/Sales/UpdateQuantity', `productPriceId=${productPriceId}&quantity=${quantity}`);
             }
         });
 
         // Atualizar preço
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('price-input')) {
-                const productId = e.target.dataset.productId;
-                const newPrice = parseFloat(e.target.value);
-                if (newPrice <= 0) { e.target.value = '0.01'; return; }
-
-                updateItem('/Sales/UpdatePrice', `productId=${productId}&newPrice=${newPrice}`);
+                const productPriceId = e.target.dataset.priceId;
+                const newPrice = parsePtBr(e.target.value);
+                if (newPrice <= 0) { e.target.value = '0,01'; return; }
+                updateItem('/Sales/UpdatePrice', `productPriceId=${productPriceId}&newPrice=${formatPtBr(newPrice)}`);
             }
         });
 
         // Aplicar desconto no item
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('discount-input')) {
-                const productId = e.target.dataset.productId;
-                const discount = parseFloat(e.target.value) || 0;
-
-                updateItem('/Sales/ApplyDiscount', `productId=${productId}&discount=${discount}`);
+                const productPriceId = e.target.dataset.priceId;
+                const discount = parsePtBr(e.target.value);
+                updateItem('/Sales/ApplyDiscount', `productPriceId=${productPriceId}&discount=${formatPtBr(discount)}`);
             }
         });
 
         // Remover item
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('btn-remove')) {
-                const productId = e.target.dataset.productId;
-                updateItem('/Sales/RemoveItem', `productId=${productId}`);
+                const productPriceId = e.target.dataset.priceId;
+                updateItem('/Sales/RemoveItem', `productPriceId=${productPriceId}`);
             }
         });
 
-        // Desconto geral
+        // Desconto geral — 🔧 CORREÇÃO: envia com vírgula (pt-BR)
         document.getElementById('btnApplyGeneralDiscount').addEventListener('click', function() {
-            const discount = parseFloat(document.getElementById('generalDiscount').value) || 0;
-            updateItem('/Sales/ApplyGeneralDiscount', `discount=${discount}`);
+            const discount = parsePtBr(document.getElementById('generalDiscount').value);
+            updateItem('/Sales/ApplyGeneralDiscount', `discount=${formatPtBr(discount)}`);
         });
 
         function updateItem(url, body) {
@@ -238,9 +282,31 @@
             });
         }
 
+        // Validação no submit
+        document.getElementById('finalizeForm').addEventListener('submit', function(e) {
+            const emptyRow = document.getElementById('emptyRow');
+            const errorDiv = document.getElementById('finalizeError');
+            const codeInput = document.getElementById('productCode');
+
+            if (emptyRow) {
+                e.preventDefault();
+                errorDiv.style.display = 'block';
+                codeInput.focus();
+                return false;
+            }
+
+            if (!document.getElementById('paymentMethodInput').value) {
+                e.preventDefault();
+                alert('Selecione uma forma de pagamento.');
+                return false;
+            }
+
+            errorDiv.style.display = 'none';
+        });
+
         function updateCart(cart) {
             const tbody = document.getElementById('itemsTableBody');
-            const emptyRow = document.getElementById('emptyRow');
+            const errorDiv = document.getElementById('finalizeError');
 
             if (cart.items.length === 0) {
                 tbody.innerHTML = `
@@ -249,33 +315,33 @@
                             Nenhum produto adicionado. Digite o código acima.
                         </td>
                     </tr>`;
-                document.getElementById('btnFinalize').disabled = true;
+                errorDiv.style.display = 'none';
             } else {
                 tbody.innerHTML = cart.items.map(item => `
-                                           <tr data-product-id="${item.productId}" data-price-id="${item.productPriceId}">
-                            <td><code>${item.barcode}</code></td>
-                            <td>${item.productName}</td>
-                            <td>
-                                <input type="number" class="form-input qty-input" value="${item.quantity}" min="1" style="width: 60px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
-                            </td>
-                            <td>
-                                <input type="number" class="form-input price-input" value="${item.unitPrice.toFixed(2)}" step="0.01" min="0.01" style="width: 90px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
-                            </td>
-                            <td>
-                                <input type="number" class="form-input discount-input" value="${item.discount.toFixed(2)}" step="0.01" min="0" style="width: 80px;" data-product-id="${item.productId}" data-price-id="${item.productPriceId}" />
-                            </td>
-                            <td class="item-total">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</td>
-                            <td>
-                                <button type="button" class="btn btn-danger btn-remove" data-price-id="${item.productPriceId}" style="padding: 0.25rem 0.5rem;">🗑️</button>
-                            </td>
-                        </tr>
+                    <tr data-product-id="${item.productId}" data-price-id="${item.productPriceId}">
+                        <td><code>${item.barcode}</code></td>
+                        <td>${item.productName}</td>
+                        <td>
+                            <input type="text" inputmode="numeric" class="form-input qty-input" value="${item.quantity}" min="1" style="width: 60px;" data-price-id="${item.productPriceId}" />
+                        </td>
+                        <td>
+                            <input type="text" inputmode="decimal" class="form-input price-input" value="${formatPtBr(item.unitPrice)}" style="width: 90px;" data-price-id="${item.productPriceId}" />
+                        </td>
+                        <td>
+                            <input type="text" inputmode="decimal" class="form-input discount-input" value="${formatPtBr(item.discount)}" style="width: 80px;" data-price-id="${item.productPriceId}" />
+                        </td>
+                        <td class="item-total">R$ ${formatPtBr(item.totalPrice)}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-remove" data-price-id="${item.productPriceId}" style="padding: 0.25rem 0.5rem;">🗑️</button>
+                        </td>
+                    </tr>
                 `).join('');
-                document.getElementById('btnFinalize').disabled = false;
+                errorDiv.style.display = 'none';
             }
 
-            document.getElementById('subtotal').textContent = 'R$ ' + cart.subtotal.toFixed(2).replace('.', ',');
-            document.getElementById('itemsDiscount').textContent = 'R$ ' + cart.items.reduce((sum, i) => sum + i.discount, 0).toFixed(2).replace('.', ',');
-            document.getElementById('totalAmount').textContent = 'R$ ' + cart.totalAmount.toFixed(2).replace('.', ',');
+            document.getElementById('subtotal').textContent = 'R$ ' + formatPtBr(cart.subtotal);
+            document.getElementById('itemsDiscount').textContent = 'R$ ' + formatPtBr(cart.items.reduce((sum, i) => sum + i.discount, 0));
+            document.getElementById('totalAmount').textContent = 'R$ ' + formatPtBr(cart.totalAmount);
         }
     </script>
 }

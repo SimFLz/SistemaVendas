@@ -2,76 +2,193 @@
 @using SalesManagement.Models.Enums
 @{
     ViewData["Title"] = $"Notinha - Venda #{Model.Id}";
+    Layout = null;
 }
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #1e293b;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .receipt-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 360px;
+        }
+        .receipt {
+            border: 1px dashed #94a3b8;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed #000;
+        }
+        .receipt-header h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 700;
+        }
+        .receipt-header p {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .receipt-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            margin-bottom: 0.2rem;
+        }
+        .receipt-line strong {
+            font-weight: 700;
+        }
+        .receipt-divider {
+            border-top: 1px dashed #000;
+            margin: 0.5rem 0;
+        }
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+        .receipt-footer {
+            text-align: center;
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .payment-box {
+            text-align: center;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .installments {
+            color: #2563eb;
+            font-size: 0.9rem;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-secondary { background: #e2e8f0; color: #0f172a; }
+        .product-item {
+            margin-bottom: 0.4rem;
+        }
+        .product-name {
+            font-weight: 600;
+            font-size: 0.82rem;
+        }
+        .product-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-box">
+        <div class="receipt">
+            <div class="receipt-header">
+                <h3>🧾 SALESUP</h3>
+                <p>CUPOM FISCAL</p>
+                <p>@Model.SaleDate.ToString("dd/MM/yyyy HH:mm")</p>
+                <p>Venda #@Model.Id</p>
+            </div>
 
-<div class="card" style="max-width: 400px; margin: 0 auto;">
-    <div class="receipt">
-        <div class="receipt-header">
-            <h3>🧾 SALESUP</h3>
-            <p>CNPJ: 00.000.000/0000-00</p>
-            <p>@Model.SaleDate.ToString("dd/MM/yyyy HH:mm")</p>
-            <p>Venda #@Model.Id</p>
-        </div>
-
-        <div class="receipt-items">
             @foreach (var item in Model.Items)
             {
-                <div class="receipt-item">
-                    <span>@item.Quantity x @item.Product.Name</span>
-                    <span>@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                <div class="product-item">
+                    <div class="product-name">@item.Product.Name</div>
+                    <div class="product-detail">
+                        <span>@item.Quantity x @item.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                        @if (item.Discount > 0)
+                        {
+                            <span style="color: #dc2626;">-@item.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                        }
+                    </div>
+                    <div class="receipt-line" style="font-weight: 600;">
+                        <span></span>
+                        <span>@item.TotalPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                    </div>
                 </div>
-                @if (item.Discount > 0)
+            }
+
+            <div class="receipt-divider"></div>
+
+            @if (Model.Discount > 0)
+            {
+                <div class="receipt-line">
+                    <span>Desconto Geral:</span>
+                    <span style="color: #dc2626;">-@Model.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                </div>
+            }
+
+            <div class="receipt-total">
+                <span>TOTAL:</span>
+                <span style="color: #2563eb;">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+            </div>
+
+            <!-- Pagamento -->
+            <div class="payment-box">
+                @(Model.PaymentMethod switch {
+                    PaymentMethod.Cash => "💵 Dinheiro",
+                    PaymentMethod.DebitCard => "💳 Cartão de Débito",
+                    PaymentMethod.CreditCard => "💳 Cartão de Crédito",
+                    PaymentMethod.Pix => "📱 PIX",
+                    _ => Model.PaymentMethod.ToString()
+                })
+                @if (Model.PaymentMethod == PaymentMethod.CreditCard)
                 {
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                        &nbsp;&nbsp;Desc: -@item.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+                    <div class="installments">
+                        @Model.Installments x de @((Model.TotalAmount / Model.Installments).ToString("C", new System.Globalization.CultureInfo("pt-BR")))
                     </div>
                 }
-            }
-        </div>
-
-        @if (Model.Discount > 0)
-        {
-            <div style="margin-top: 0.5rem; font-size: 0.875rem;">
-                <div class="receipt-item">
-                    <span>Desconto Geral:</span>
-                    <span>-@Model.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
-                </div>
             </div>
-        }
 
-        <div class="receipt-total">
-            <div class="receipt-item">
-                <span>TOTAL:</span>
-                <span>@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
-            </div>
-            <div style="font-size: 0.875rem; margin-top: 0.25rem;">
-                <span>Pagamento:</span>
-                <span>
-                    @(Model.PaymentMethod switch {
-                        PaymentMethod.Cash => "💵 Dinheiro",
-                        PaymentMethod.DebitCard => "💳 Débito",
-                        PaymentMethod.CreditCard => "💳 Crédito",
-                        PaymentMethod.Pix => "📱 PIX",
-                        _ => Model.PaymentMethod.ToString()
-                    })
-                </span>
+            <div class="receipt-footer">
+                <p>Obrigado pela preferência! 🙏</p>
+                <p>SalesUP PDV</p>
             </div>
         </div>
 
-        <div class="receipt-footer">
-            <p>Obrigado pela preferência!</p>
-            <p>Volte sempre 🙏</p>
-        </div>
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Notinha</button>
+        <a href="/Sales/Register" class="btn btn-success">🛒 Nova Venda</a>
+        <a href="/Dashboard" class="btn btn-secondary">📊 Dashboard</a>
     </div>
-
-    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-        <button onclick="window.print()" class="btn btn-primary" style="flex: 1;">🖨️ Imprimir</button>
-        <a href="/Sales/Register" class="btn btn-success" style="flex: 1;">🛒 Nova Venda</a>
-    </div>
-    <a href="/Sales/History" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">📋 Ver Histórico</a>
-</div>
+</body>
+</html>

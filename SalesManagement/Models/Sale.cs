@@ -23,6 +23,10 @@ public class Sale
     [Display(Name = "Forma de Pagamento")]
     public PaymentMethod PaymentMethod { get; set; }
 
+    [Display(Name = "Parcelas")]
+    [Range(1, 12)]
+    public int Installments { get; set; } = 1;
+
     [Column(TypeName = "decimal(18,2)")]
     [Display(Name = "Desconto")]
     [DataType(DataType.Currency)]

@@ -4,7 +4,7 @@
     ViewData["Title"] = $"Detalhes da Venda #{Model.Id}";
 }
 
-<div class="card" style="max-width: 700px;">
+<div class="card">
     <div class="card-header">
         <span class="card-title">📋 Venda #@Model.Id</span>
         <span style="color: var(--text-muted); font-size: 0.875rem;">
@@ -13,7 +13,7 @@
     </div>
 
     <div style="margin-bottom: 1.5rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
             <div>
                 <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Status</label>
                 <p>
@@ -37,8 +37,19 @@
                         PaymentMethod.Pix => "📱 PIX",
                         _ => Model.PaymentMethod.ToString()
                     })
+                    @if (Model.PaymentMethod == PaymentMethod.CreditCard)
+                    {
+                        <span style="color: var(--text-muted); font-size: 0.875rem;">(@Model.Installments x)</span>
+                    }
                 </p>
             </div>
+            @if (Model.Installments > 1)
+            {
+                <div>
+                    <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Parcelas</label>
+                    <p>@Model.Installments x de @((Model.TotalAmount / Model.Installments).ToString("C", new System.Globalization.CultureInfo("pt-BR")))</p>
+                </div>
+            }
         </div>
 
         <div class="table-container">

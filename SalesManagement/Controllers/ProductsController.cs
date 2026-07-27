@@ -226,7 +226,6 @@ public class ProductsController : Controller
         return Json(new { success = true, price = new { id = productPrice.Id, price = productPrice.Price, barcode = productPrice.Barcode } });
     }
 
-    // POST: /Products/RemovePrice (AJAX)
     [HttpPost]
     public async Task<IActionResult> RemovePrice(int priceId)
     {
@@ -236,12 +235,8 @@ public class ProductsController : Controller
             return Json(new { success = false, message = "Preço não encontrado." });
         }
 
-        // Verificar se o preço foi usado em vendas
-        var hasSales = await _context.SaleItems.AnyAsync(si => si.ProductPriceId == priceId);
-        if (hasSales)
-        {
-            return Json(new { success = false, message = "Não é possível excluir este preço pois já foi usado em vendas." });
-        }
+        // 🔧 BLOQUEIO REMOVIDO — agora permite excluir mesmo com vendas antigas
+        // (o banco vai setar ProductPriceId como NULL nas SaleItems via SetNull)
 
         _context.ProductPrices.Remove(price);
         await _context.SaveChangesAsync();

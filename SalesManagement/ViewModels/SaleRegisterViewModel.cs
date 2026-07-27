@@ -11,6 +11,10 @@ public class SaleRegisterViewModel
     [Display(Name = "Forma de Pagamento")]
     public PaymentMethod PaymentMethod { get; set; }
 
+    [Display(Name = "Parcelas")]
+    [Range(1, 12)]
+    public int Installments { get; set; } = 1;
+
     [Display(Name = "Desconto Geral")]
     public decimal GeneralDiscount { get; set; } = 0;
 

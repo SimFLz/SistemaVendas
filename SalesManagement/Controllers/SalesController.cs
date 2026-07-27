@@ -178,24 +178,23 @@ public class SalesController : Controller
         return Json(new { success = true, cart = cart });
     }
 
-    // POST: /Sales/Finalize (Finalizar venda)
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Finalize(SaleRegisterViewModel model)
     {
         var cart = GetCartFromSession();
 
-        if (cart.Items.Count == 0)
+        if (!ModelState.IsValid)
         {
-            TempData["Error"] = "Adicione pelo menos um produto à venda.";
+            TempData["Error"] = "Preencha todos os campos obrigatórios.";
             return RedirectToAction(nameof(Register));
         }
 
-        // Criar a venda
         var sale = new Sale
         {
             SaleDate = DateTime.Now,
             PaymentMethod = model.PaymentMethod,
+            Installments = model.PaymentMethod == PaymentMethod.CreditCard ? model.Installments : 1,
             Discount = cart.GeneralDiscount,
             TotalAmount = cart.TotalAmount,
             Status = SaleStatus.Completed
@@ -204,14 +203,13 @@ public class SalesController : Controller
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
 
-        // Criar os itens da venda
         foreach (var item in cart.Items)
         {
             var saleItem = new SaleItem
             {
                 SaleId = sale.Id,
                 ProductId = item.ProductId,
-                ProductPriceId = item.ProductPriceId, // 🔧 CORRIGIDO: agora salva o preço vendido
+                ProductPriceId = item.ProductPriceId,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 Discount = item.Discount,
@@ -223,7 +221,6 @@ public class SalesController : Controller
 
         await _context.SaveChangesAsync();
 
-        // Limpar carrinho
         HttpContext.Session.Remove("SaleCart");
 
         TempData["Success"] = $"Venda #{sale.Id} finalizada com sucesso!";

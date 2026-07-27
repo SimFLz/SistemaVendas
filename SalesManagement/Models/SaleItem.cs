@@ -13,8 +13,8 @@ public class SaleItem
     [Required]
     public int ProductId { get; set; }
 
-    [Required]
-    public int ProductPriceId { get; set; }
+    // 🔧 REMOVIDO [Required] e tornado nullable para permitir exclusão do preço
+    public int? ProductPriceId { get; set; }
 
     [Required(ErrorMessage = "A quantidade é obrigatória.")]
     [Range(1, int.MaxValue, ErrorMessage = "A quantidade deve ser pelo menos 1.")]
@@ -41,5 +41,5 @@ public class SaleItem
     // Navegação
     public Sale Sale { get; set; } = null!;
     public Product Product { get; set; } = null!;
-    public ProductPrice ProductPrice { get; set; } = null!;
+    public ProductPrice? ProductPrice { get; set; }
 }

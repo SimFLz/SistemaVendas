@@ -16,121 +16,277 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Caixa Fechado - SalesUP</title>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
+        /* ========== TELA ========== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1e293b;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            padding: 2rem;
+            padding: 2rem 1rem;
         }
-        .closed-box {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
+        .page-wrapper {
             max-width: 480px;
+            margin: 0 auto;
         }
-        .closed-header {
+
+        /* Header de sucesso (só na tela) */
+        .success-header {
             text-align: center;
             margin-bottom: 1.5rem;
+            color: #fff;
         }
-        .closed-header h2 {
-            color: var(--success);
+        .success-header .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        .success-header h2 {
+            font-size: 1.3rem;
+            color: #4ade80;
             margin-bottom: 0.25rem;
         }
-        .closed-header p {
-            color: var(--text-muted);
+        .success-header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .screen-card {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            margin-bottom: 1rem;
+        }
+
+        /* ========== RECIBO ========== */
+        .receipt {
+            font-family: 'Courier New', Courier, monospace;
+            color: #000;
+            padding: 0.5rem;
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 0.5rem;
+        }
+        .receipt-header .store-name {
+            font-size: 1.15rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 0.2rem;
+        }
+        .receipt-header .store-sub {
+            font-size: 0.7rem;
+            color: #334155;
+        }
+        .receipt-header .store-info {
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.15rem;
+        }
+        .line.bold { font-weight: bold; }
+        .line.primary { font-weight: bold; }
+        .line.big {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: 0.3rem;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px dashed #000;
+            margin: 0.5rem 0;
+        }
+
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 0.2rem;
+            text-align: center;
+        }
+
+        .sale-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+        }
+
+        /* ========== BOTÕES ========== */
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            color: #fff;
+        }
+        .btn-print { background: #2563eb; }
+        .btn-print:hover { background: #1d4ed8; }
+        .btn-success { background: #16a34a; }
+        .btn-success:hover { background: #15803d; }
+
+        /* ========== IMPRESSÃO INFALÍVEL ========== */
+        @@media print {
+            @@page { size: 80mm auto; margin: 0; }
+
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            body * {
+                visibility: hidden;
+            }
+
+            .receipt,
+            .receipt * {
+                visibility: visible;
+            }
+
+            .screen-card {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                background: transparent;
+            }
+
+            .receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0.3rem;
+            }
+
+            /* Esconde tudo que não é o recibo */
+            .success-header,
+            .actions {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="closed-box">
-        <div class="closed-header">
-            <div style="font-size: 3rem;">✅</div>
+    <div class="page-wrapper">
+        <!-- Só aparece na TELA -->
+        <div class="success-header">
+            <div class="icon">✅</div>
             <h2>Caixa Fechado com Sucesso!</h2>
             <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
         </div>
 
-        <!-- Notinha -->
-        <div class="receipt" style="max-width: 100%; margin: 0 0 1.5rem 0; border: 1px dashed #ccc; padding: 1rem;">
-            <div class="receipt-header" style="text-align: center; margin-bottom: 0.75rem;">
-                <h4 style="margin: 0;">🧾 SALESUP</h4>
-                <p style="margin: 0; font-size: 0.75rem;">Fechamento de Caixa #@Model.Id</p>
-                <p style="margin: 0; font-size: 0.75rem;">@Model.OpenDate.ToString("dd/MM/yyyy")</p>
-            </div>
+        <div class="screen-card">
+            <div class="receipt">
+                <div class="receipt-header">
+                    <div class="store-name">SALESUP</div>
+                    <div class="store-sub">Fechamento de Caixa #@Model.Id</div>
+                    <div class="store-info">@Model.OpenDate.ToString("dd/MM/yyyy")</div>
+                </div>
 
-            <div style="font-size: 0.8rem; margin-bottom: 0.5rem;">
-                <div style="display: flex; justify-content: space-between;">
+                <div class="line">
                     <span>Abertura:</span>
                     <span>@Model.OpenDate.ToString("HH:mm")</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div class="line">
                     <span>Fechamento:</span>
                     <span>@Model.CloseDate?.ToString("HH:mm")</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div class="line">
                     <span>Valor Inicial:</span>
                     <span>@Model.InitialAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
                 </div>
-            </div>
 
-            <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem;">
-                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                <hr class="divider" />
+
+                <div class="line bold">
                     <span>Vendas do Dia:</span>
                     <span>@totalSales</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--primary);">
+                <div class="line primary">
                     <span>Total Vendas:</span>
                     <span>@totalRevenue.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
                 </div>
-            </div>
 
-            @if (salesByPayment.Any())
-            {
-                <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem; font-size: 0.75rem;">
-                    <div style="font-weight: bold; margin-bottom: 0.25rem;">Por Pagamento:</div>
+                @if (salesByPayment.Any())
+                {
+                    <hr class="divider" />
+                    <div class="section-title">Por Pagamento</div>
                     @foreach (var item in salesByPayment)
                     {
-                        <div style="display: flex; justify-content: space-between;">
+                        <div class="line">
                             <span>
                                 @(item.Key switch {
-                                    PaymentMethod.Cash => "💵 Dinheiro",
-                                    PaymentMethod.DebitCard => "💳 Débito",
-                                    PaymentMethod.CreditCard => "💳 Crédito",
-                                    PaymentMethod.Pix => "📱 PIX",
+                                    PaymentMethod.Cash => "Dinheiro",
+                                    PaymentMethod.DebitCard => "Debito",
+                                    PaymentMethod.CreditCard => "Credito",
+                                    PaymentMethod.Pix => "PIX",
                                     _ => item.Key.ToString()
                                 })
                             </span>
                             <span>@item.Value.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
                         </div>
                     }
-                </div>
-            }
+                }
 
-            <div style="border-top: 1px dashed #000; margin: 0.5rem 0; padding-top: 0.5rem;">
-                <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold;">
+                @if (sales.Any())
+                {
+                    <hr class="divider" />
+                    <div class="section-title">Vendas Detalhadas</div>
+                    @foreach (var sale in sales)
+                    {
+                        <div class="sale-row">
+                            <span>
+                                #@sale.Id - @sale.SaleDate.ToString("HH:mm")
+                                @if (sale.PaymentMethod == PaymentMethod.CreditCard)
+                                {
+                                    <span>(@sale.Installments x)</span>
+                                }
+                            </span>
+                            <span>@sale.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+                        </div>
+                    }
+                }
+
+                <hr class="divider" />
+
+                <div class="line big">
                     <span>TOTAL EM CAIXA:</span>
                     <span>@Model.FinalAmount?.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
                 </div>
-            </div>
 
-            <div class="receipt-footer" style="text-align: center; margin-top: 0.5rem; font-size: 0.7rem;">
-                <p>Obrigado! 🙏</p>
+                <div class="receipt-footer">
+                    <p>Obrigado!</p>
+                </div>
             </div>
         </div>
 
-        <!-- Botões -->
-        <div style="display: flex; gap: 0.75rem; flex-direction: column;">
-            <button onclick="window.print()" class="btn btn-primary btn-lg" style="width: 100%;">
-                🖨️ Imprimir Notinha
-            </button>
-            <a href="/CashRegister" class="btn btn-success btn-lg" style="width: 100%; text-align: center;">
-                🔓 Abrir Caixa
-            </a>
+        <div class="actions">
+            <button onclick="window.print()" class="btn btn-print">🖨️ Imprimir Notinha</button>
+            <a href="/CashRegister" class="btn btn-success">🔓 Abrir Caixa</a>
         </div>
     </div>
 </body>

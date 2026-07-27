@@ -51,10 +51,10 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<SaleItem>()
-            .HasOne(si => si.ProductPrice)
-            .WithMany()
-            .HasForeignKey(si => si.ProductPriceId)
-            .OnDelete(DeleteBehavior.Restrict);
+    .HasOne(si => si.ProductPrice)
+    .WithMany()
+    .HasForeignKey(si => si.ProductPriceId)
+    .OnDelete(DeleteBehavior.SetNull);
 
         // Enums como string no banco
         modelBuilder.Entity<Sale>()
