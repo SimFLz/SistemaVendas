@@ -67,7 +67,7 @@
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td>@item.Product.Name</td>
+                            <td>@(item.Product?.Name ?? "Produto Excluído")</td>
                             <td>@item.Quantity</td>
                             <td>@item.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
                             <td>@item.Discount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>

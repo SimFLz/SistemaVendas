@@ -118,6 +118,44 @@
             font-size: 0.75rem;
             color: #475569;
         }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* ========== IMPRESSÃO INFALÍVEL ========== */
+        @@media print {
+            @@page { size: 80mm auto; margin: 0; }
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            body * {
+                visibility: hidden;
+            }
+            .receipt,
+            .receipt * {
+                visibility: visible;
+            }
+            .receipt-box {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                background: transparent;
+            }
+            .receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0.3rem;
+            }
+            .actions {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -133,7 +171,7 @@
             @foreach (var item in Model.Items)
             {
                 <div class="product-item">
-                    <div class="product-name">@item.Product.Name</div>
+                    <div class="product-name">@(item.Product?.Name ?? "Produto Excluído")</div>
                     <div class="product-detail">
                         <span>@item.Quantity x @item.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
                         @if (item.Discount > 0)
@@ -163,7 +201,6 @@
                 <span style="color: #2563eb;">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
             </div>
 
-            <!-- Pagamento -->
             <div class="payment-box">
                 @(Model.PaymentMethod switch {
                     PaymentMethod.Cash => "💵 Dinheiro",
@@ -186,9 +223,12 @@
             </div>
         </div>
 
-        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Notinha</button>
-        <a href="/Sales/Register" class="btn btn-success">🛒 Nova Venda</a>
-        <a href="/Dashboard" class="btn btn-secondary">📊 Dashboard</a>
+        <!-- 🔧 BOTÕES DENTRO DE .actions PARA SEREM ESCONDIDOS NA IMPRESSÃO -->
+        <div class="actions">
+            <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Notinha</button>
+            <a href="/Sales/Register" class="btn btn-success">🛒 Nova Venda</a>
+            <a href="/Dashboard" class="btn btn-secondary">📊 Dashboard</a>
+        </div>
     </div>
 </body>
 </html>

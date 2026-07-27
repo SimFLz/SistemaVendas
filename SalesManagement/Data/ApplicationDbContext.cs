@@ -44,17 +44,17 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(si => si.SaleId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<SaleItem>()
+       modelBuilder.Entity<SaleItem>()
             .HasOne(si => si.Product)
             .WithMany(p => p.SaleItems)
             .HasForeignKey(si => si.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<SaleItem>()
-    .HasOne(si => si.ProductPrice)
-    .WithMany()
-    .HasForeignKey(si => si.ProductPriceId)
-    .OnDelete(DeleteBehavior.SetNull);
+       modelBuilder.Entity<SaleItem>()
+            .HasOne(si => si.ProductPrice)
+            .WithMany()
+            .HasForeignKey(si => si.ProductPriceId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Enums como string no banco
         modelBuilder.Entity<Sale>()

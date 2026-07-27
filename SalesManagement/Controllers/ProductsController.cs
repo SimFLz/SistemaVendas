@@ -270,22 +270,13 @@ public class ProductsController : Controller
 
         if (product == null) return NotFound();
 
-        // Verificar se o produto foi usado em vendas
-        var hasSales = await _context.SaleItems.AnyAsync(si => si.ProductId == id);
-        if (hasSales)
-        {
-            product.IsActive = false;
-            _context.Update(product);
-            await _context.SaveChangesAsync();
-            TempData["Warning"] = $"Produto '{product.Name}' foi inativado (possui vendas registradas).";
-        }
-        else
-        {
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"Produto '{product.Name}' excluído com sucesso!";
-        }
+        // 🔧 Agora exclui definitivamente, mesmo com vendas.
+        // O banco vai setar ProductId como NULL nos SaleItems (SetNull)
+        // e os ProductPrices serão excluídos em cascade automaticamente.
+        _context.Products.Remove(product);
+        await _context.SaveChangesAsync();
 
+        TempData["Success"] = $"Produto '{product.Name}' excluído com sucesso!";
         return RedirectToAction(nameof(Index));
     }
 

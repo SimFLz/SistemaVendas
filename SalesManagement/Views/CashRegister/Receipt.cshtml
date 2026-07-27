@@ -2,6 +2,7 @@
 @using SalesManagement.Models.Enums
 @{
     ViewData["Title"] = ViewData["Type"]?.ToString() == "close" ? "Fechamento de Caixa" : "Abertura de Caixa";
+    Layout = null; // 🔧 ESSENCIAL: remove sidebar/topbar
     var isClose = ViewData["Type"]?.ToString() == "close";
     var totalRevenue = ViewData["TotalRevenue"] as decimal? ?? 0;
     var totalSales = ViewData["TotalSales"] as int? ?? 0;
@@ -28,6 +29,27 @@
             max-width: 480px;
             margin: 0 auto;
         }
+
+        /* 🔧 HEADER DE SUCESSO (igual ao Closed.cshtml) */
+        .success-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+        .success-header .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        .success-header h2 {
+            font-size: 1.3rem;
+            color: #4ade80;
+            margin-bottom: 0.25rem;
+        }
+        .success-header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
         .screen-card {
             background: #fff;
             border-radius: 1rem;
@@ -102,11 +124,12 @@
         /* ========== BOTÕES ========== */
         .actions {
             display: flex;
+            flex-direction: column;
             gap: 0.5rem;
         }
         .btn {
             display: block;
-            flex: 1;
+            width: 100%;
             padding: 0.875rem;
             border-radius: 0.5rem;
             border: none;
@@ -154,6 +177,8 @@
                 padding: 0.3rem;
             }
 
+            /* Esconde header e botões na impressão */
+            .success-header,
             .actions {
                 display: none !important;
             }
@@ -162,6 +187,25 @@
 </head>
 <body>
     <div class="page-wrapper">
+
+        <!-- 🔧 HEADER DE SUCESSO PARA ABERTURA -->
+        @if (!isClose)
+        {
+            <div class="success-header">
+                <div class="icon">🔓</div>
+                <h2>Caixa Aberto com Sucesso!</h2>
+                <p>@Model.OpenDate.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+        }
+        else
+        {
+            <div class="success-header">
+                <div class="icon">✅</div>
+                <h2>Caixa Fechado com Sucesso!</h2>
+                <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+        }
+
         <div class="screen-card">
             <div class="receipt">
                 <div class="receipt-header">

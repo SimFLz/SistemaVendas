@@ -10,10 +10,9 @@ public class SaleItem
     [Required]
     public int SaleId { get; set; }
 
-    [Required]
-    public int ProductId { get; set; }
+    // 🔧 REMOVIDO [Required] e tornado nullable para permitir exclusão do produto
+    public int? ProductId { get; set; }
 
-    // 🔧 REMOVIDO [Required] e tornado nullable para permitir exclusão do preço
     public int? ProductPriceId { get; set; }
 
     [Required(ErrorMessage = "A quantidade é obrigatória.")]
@@ -40,6 +39,6 @@ public class SaleItem
 
     // Navegação
     public Sale Sale { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+    public Product? Product { get; set; }
     public ProductPrice? ProductPrice { get; set; }
 }
