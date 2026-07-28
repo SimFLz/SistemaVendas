@@ -5,6 +5,11 @@
     var selectedDate = ViewData["SelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
 
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+    <a href="/Reports/Daily" class="btn btn-primary" style="text-decoration: none;">📈 Diário</a>
+    <a href="/Reports/Monthly" class="btn btn-secondary" style="text-decoration: none;">📅 Mensal</a>
+</div>
+
 <div class="card">
     <div class="card-header">
         <span class="card-title">📈 Relatório Diário</span>
@@ -38,7 +43,7 @@
         <div class="card-header">
             <span class="card-title">💳 Vendas por Forma de Pagamento</span>
         </div>
-        @if (Model.SalesByPaymentMethod.Any())
+        @if (Model.SalesByPaymentMethod.Count > 0)
         {
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 @foreach (var item in Model.SalesByPaymentMethod)
