@@ -12,7 +12,7 @@ using SalesManagement.ViewModels;
 
 namespace SalesManagement.Controllers;
 
-[AllowAnonymous] // 🔧 TODAS as actions deste controller são públicas
+[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -71,6 +71,62 @@ public class AccountController : Controller
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
+        return RedirectToAction("Index", "Sales");
+    }
+
+    // 🔧 CADASTRO
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+            return RedirectToAction("Index", "Sales");
+
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        // Verificar e-mail duplicado
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == model.Email.ToLower()))
+        {
+            ModelState.AddModelError("Email", "Este e-mail já está cadastrado.");
+            return View(model);
+        }
+
+        var user = new User
+        {
+            StoreName = model.StoreName,
+            Email = model.Email,
+            PasswordHash = HashPassword(model.Password),
+            Cnpj = model.Cnpj,
+            StoreAddress = model.StoreAddress,
+            StorePhone = model.StorePhone,
+            IsAdmin = true
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Login automático após cadastro
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.GivenName, user.StoreName),
+            new Claim("StoreName", user.StoreName)
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity));
+
+        TempData["Success"] = "Conta criada com sucesso! Bem-vindo ao SalesUP.";
         return RedirectToAction("Index", "Sales");
     }
 
