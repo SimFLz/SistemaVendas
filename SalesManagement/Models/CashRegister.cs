@@ -7,7 +7,7 @@ public class CashRegister
 {
     public int Id { get; set; }
 
-    [Required]
+    
     [Display(Name = "Data de Abertura")]
     public DateTime OpenDate { get; set; }
 
@@ -31,6 +31,9 @@ public class CashRegister
     [StringLength(500)]
     [Display(Name = "Observações")]
     public string? Observations { get; set; }
+
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
 }
 
 public enum CashRegisterStatus

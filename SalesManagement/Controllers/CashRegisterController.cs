@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
 using SalesManagement.Models;
@@ -7,8 +6,7 @@ using SalesManagement.Models.Enums;
 
 namespace SalesManagement.Controllers;
 
-[Authorize]
-public class CashRegisterController : Controller
+public class CashRegisterController : BaseController
 {
     private readonly ApplicationDbContext _context;
 
@@ -17,37 +15,40 @@ public class CashRegisterController : Controller
         _context = context;
     }
 
-    // GET: /CashRegister (Tela de abertura de caixa)
     public async Task<IActionResult> Index()
     {
-        // Verificar se já existe caixa aberto hoje
         var today = DateTime.Today;
         var tomorrow = today.AddDays(1);
+        var userId = GetCurrentUserId();
 
         var openRegister = await _context.CashRegisters
-            .FirstOrDefaultAsync(c => c.OpenDate >= today && c.OpenDate < tomorrow && c.Status == CashRegisterStatus.Open);
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.OpenDate >= today && c.OpenDate < tomorrow && c.Status == CashRegisterStatus.Open);
 
         if (openRegister != null)
-        {
-            // Caixa já aberto, redireciona para tela inicial
             return RedirectToAction("Index", "Sales");
-        }
 
         ViewData["Title"] = "Abertura de Caixa";
         return View();
     }
 
-    // POST: /CashRegister/Open
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Open([Bind("InitialAmount,Observations")] CashRegister cashRegister)
     {
-        // Verificar se já existe caixa aberto hoje
+        // 🔧 LIMPA ERROS DE CAMPOS PREENCHIDOS PELO SERVIDOR
+        ModelState.Remove("OpenDate");
+        ModelState.Remove("Status");
+        ModelState.Remove("UserId");
+        ModelState.Remove("User");      // navegação
+        ModelState.Remove("FinalAmount");
+        ModelState.Remove("CloseDate");
+
         var today = DateTime.Today;
         var tomorrow = today.AddDays(1);
+        var userId = GetCurrentUserId();
 
         var existingOpen = await _context.CashRegisters
-            .FirstOrDefaultAsync(c => c.OpenDate >= today && c.OpenDate < tomorrow && c.Status == CashRegisterStatus.Open);
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.OpenDate >= today && c.OpenDate < tomorrow && c.Status == CashRegisterStatus.Open);
 
         if (existingOpen != null)
         {
@@ -60,13 +61,12 @@ public class CashRegisterController : Controller
         {
             cashRegister.OpenDate = DateTime.Now;
             cashRegister.Status = CashRegisterStatus.Open;
+            cashRegister.UserId = userId;
 
             _context.CashRegisters.Add(cashRegister);
             await _context.SaveChangesAsync();
 
-            // LIMPAR CARRINHO DE VENDAS ANTERIOR
-            HttpContext.Session.Remove("SaleCart");
-
+            HttpContext.Session.Remove($"SaleCart_{userId}");
             TempData["Success"] = "Caixa aberto com sucesso!";
             return RedirectToAction("Receipt", new { id = cashRegister.Id, type = "open" });
         }
@@ -75,17 +75,16 @@ public class CashRegisterController : Controller
         return View("Index", cashRegister);
     }
 
-    // GET: /CashRegister/Receipt/5?type=open
-    // GET: /CashRegister/Receipt/5?type=open
     public async Task<IActionResult> Receipt(int? id, string type)
     {
         if (id == null) return NotFound();
 
-        var cashRegister = await _context.CashRegisters.FindAsync(id);
+        var cashRegister = await _context.CashRegisters
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == GetCurrentUserId());
+
         if (cashRegister == null) return NotFound();
 
-        // 🔧 DADOS DA LOJA NA NOTINHA
-        var store = await _context.Users.FirstOrDefaultAsync();
+        var store = await _context.Users.FindAsync(GetCurrentUserId());
         ViewData["StoreName"] = store?.StoreName ?? "SALESUP";
         ViewData["StoreCnpj"] = store?.Cnpj;
         ViewData["StoreAddress"] = store?.StoreAddress;
@@ -96,11 +95,11 @@ public class CashRegisterController : Controller
 
         if (type == "close")
         {
-            var today = cashRegister.OpenDate.Date;
-            var tomorrow = today.AddDays(1);
+            var startDate = cashRegister.OpenDate.Date;
+            var endDate = startDate.AddDays(1);
 
             var sales = await _context.Sales
-                .Where(s => s.SaleDate >= today && s.SaleDate < tomorrow && s.Status != SaleStatus.Cancelled)
+                .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= startDate && s.SaleDate < endDate && s.Status != SaleStatus.Cancelled)
                 .Include(s => s.Items)
                 .ThenInclude(i => i.Product)
                 .ToListAsync();
@@ -121,12 +120,13 @@ public class CashRegisterController : Controller
         return View(cashRegister);
     }
 
-    // POST: /CashRegister/Close
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Close(int id, decimal? finalAmount, string? observations)
     {
-        var cashRegister = await _context.CashRegisters.FindAsync(id);
+        var cashRegister = await _context.CashRegisters
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == GetCurrentUserId());
+
         if (cashRegister == null) return NotFound();
 
         if (cashRegister.Status == CashRegisterStatus.Closed)
@@ -135,12 +135,11 @@ public class CashRegisterController : Controller
             return RedirectToAction("Daily", "Reports");
         }
 
-        // Buscar total de vendas do dia (DESDE A ABERTURA DO CAIXA, não do dia inteiro)
         var startDate = cashRegister.OpenDate;
         var endDate = DateTime.Now;
 
         var sales = await _context.Sales
-            .Where(s => s.SaleDate >= startDate && s.SaleDate <= endDate && s.Status != SaleStatus.Cancelled)
+            .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= startDate && s.SaleDate <= endDate && s.Status != SaleStatus.Cancelled)
             .ToListAsync();
 
         var totalSales = sales.Sum(s => s.TotalAmount);
@@ -157,17 +156,16 @@ public class CashRegisterController : Controller
         return RedirectToAction("Closed", new { id = cashRegister.Id });
     }
 
-    // GET: /CashRegister/Closed/5
-    // GET: /CashRegister/Closed/5
     public async Task<IActionResult> Closed(int? id)
     {
         if (id == null) return NotFound();
 
-        var cashRegister = await _context.CashRegisters.FindAsync(id);
+        var cashRegister = await _context.CashRegisters
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == GetCurrentUserId());
+
         if (cashRegister == null) return NotFound();
 
-        // 🔧 DADOS DA LOJA NA NOTINHA
-        var store = await _context.Users.FirstOrDefaultAsync();
+        var store = await _context.Users.FindAsync(GetCurrentUserId());
         ViewData["StoreName"] = store?.StoreName ?? "SALESUP";
         ViewData["StoreCnpj"] = store?.Cnpj;
         ViewData["StoreAddress"] = store?.StoreAddress;
@@ -176,7 +174,7 @@ public class CashRegisterController : Controller
         ViewData["Title"] = "Caixa Fechado";
 
         var sales = await _context.Sales
-            .Where(s => s.SaleDate >= cashRegister.OpenDate
+            .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= cashRegister.OpenDate
                      && s.SaleDate <= (cashRegister.CloseDate ?? DateTime.Now)
                      && s.Status != SaleStatus.Cancelled)
             .Include(s => s.Items)
@@ -198,12 +196,12 @@ public class CashRegisterController : Controller
         return View(cashRegister);
     }
 
-    // GET: /CashRegister/List
     public async Task<IActionResult> List()
     {
         ViewData["Title"] = "Histórico de Caixas";
 
         var cashRegisters = await _context.CashRegisters
+            .Where(c => c.UserId == GetCurrentUserId())
             .OrderByDescending(c => c.OpenDate)
             .ToListAsync();
 

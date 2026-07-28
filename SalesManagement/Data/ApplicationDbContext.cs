@@ -21,12 +21,11 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Índice único para código do produto
+        // Índices únicos
         modelBuilder.Entity<Product>()
             .HasIndex(p => p.Code)
             .IsUnique();
 
-        // Índice único para código de barras
         modelBuilder.Entity<ProductPrice>()
             .HasIndex(pp => pp.Barcode)
             .IsUnique();
@@ -37,7 +36,28 @@ public class ApplicationDbContext : DbContext
             .WithMany(p => p.Prices)
             .HasForeignKey(pp => pp.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        // Seed usuário admin padrão
+
+        // ===== ISOLAMENTO POR USUÁRIO =====
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Sale>()
+            .HasOne(s => s.User)
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CashRegister>()
+            .HasOne(c => c.User)
+            .WithMany()
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        // ===================================
+
+        // Seed usuário admin
         modelBuilder.Entity<User>().HasData(
             new User
             {
@@ -59,19 +79,19 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(si => si.SaleId)
             .OnDelete(DeleteBehavior.Cascade);
 
-       modelBuilder.Entity<SaleItem>()
+        modelBuilder.Entity<SaleItem>()
             .HasOne(si => si.Product)
             .WithMany(p => p.SaleItems)
             .HasForeignKey(si => si.ProductId)
             .OnDelete(DeleteBehavior.SetNull);
 
-       modelBuilder.Entity<SaleItem>()
+        modelBuilder.Entity<SaleItem>()
             .HasOne(si => si.ProductPrice)
             .WithMany()
             .HasForeignKey(si => si.ProductPriceId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Enums como string no banco
+        // Enums como string
         modelBuilder.Entity<Sale>()
             .Property(s => s.PaymentMethod)
             .HasConversion<string>();
@@ -84,16 +104,16 @@ public class ApplicationDbContext : DbContext
             .Property(c => c.Status)
             .HasConversion<string>();
 
-        // Seed de produtos de exemplo (sem preço, pois agora é na tabela ProductPrices)
+        // Seed produtos (AGORA com UserId = 1)
         modelBuilder.Entity<Product>().HasData(
-            new Product { Id = 1, Name = "Camisa Básica Branca", Code = "001", IsActive = true },
-            new Product { Id = 2, Name = "Camisa Básica Preta", Code = "002", IsActive = true },
-            new Product { Id = 3, Name = "Calça Jeans", Code = "003", IsActive = true },
-            new Product { Id = 4, Name = "Tênis Esportivo", Code = "004", IsActive = true },
-            new Product { Id = 5, Name = "Boné", Code = "005", IsActive = true }
+            new Product { Id = 1, Name = "Camisa Básica Branca", Code = "001", IsActive = true, UserId = 1 },
+            new Product { Id = 2, Name = "Camisa Básica Preta", Code = "002", IsActive = true, UserId = 1 },
+            new Product { Id = 3, Name = "Calça Jeans", Code = "003", IsActive = true, UserId = 1 },
+            new Product { Id = 4, Name = "Tênis Esportivo", Code = "004", IsActive = true, UserId = 1 },
+            new Product { Id = 5, Name = "Boné", Code = "005", IsActive = true, UserId = 1 }
         );
 
-        // Seed de preços
+        // Seed preços
         modelBuilder.Entity<ProductPrice>().HasData(
             new ProductPrice { Id = 1, ProductId = 1, Price = 39.90m, Barcode = "0013990" },
             new ProductPrice { Id = 2, ProductId = 1, Price = 49.90m, Barcode = "0014990" },

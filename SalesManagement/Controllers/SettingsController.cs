@@ -1,15 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SalesManagement.Controllers;
 using SalesManagement.Data;
-using SalesManagement.Models;
 using SalesManagement.ViewModels;
 
 namespace SalesManagement.Controllers;
 
-[Authorize]
-public class SettingsController : Controller
+public class SettingsController : BaseController
 {
     private readonly ApplicationDbContext _context;
 
@@ -18,14 +14,9 @@ public class SettingsController : Controller
         _context = context;
     }
 
-    // GET: /Settings
     public async Task<IActionResult> Index()
     {
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdClaim, out int userId))
-            return RedirectToAction("Login", "Account");
-
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.Users.FindAsync(GetCurrentUserId());
         if (user == null) return NotFound();
 
         var model = new StoreSettingsViewModel
@@ -42,7 +33,6 @@ public class SettingsController : Controller
         return View(model);
     }
 
-    // POST: /Settings
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(StoreSettingsViewModel model)
@@ -53,11 +43,10 @@ public class SettingsController : Controller
             return View(model);
         }
 
-        var user = await _context.Users.FindAsync(model.Id);
+        var user = await _context.Users.FindAsync(GetCurrentUserId());
         if (user == null) return NotFound();
 
-        // Verificar se o e-mail já existe em outro usuário
-        if (await _context.Users.AnyAsync(u => u.Email == model.Email && u.Id != model.Id))
+        if (await _context.Users.AnyAsync(u => u.Email == model.Email && u.Id != user.Id))
         {
             ModelState.AddModelError("Email", "Este e-mail já está em uso.");
             ViewData["Title"] = "Configurações da Loja";
@@ -70,7 +59,6 @@ public class SettingsController : Controller
         user.StorePhone = model.StorePhone;
         user.Email = model.Email;
 
-        // Atualizar senha se informada
         if (!string.IsNullOrWhiteSpace(model.NewPassword))
         {
             user.PasswordHash = AccountController.HashPassword(model.NewPassword);

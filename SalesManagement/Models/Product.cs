@@ -19,7 +19,9 @@ public class Product
     [Display(Name = "Ativo")]
     public bool IsActive { get; set; } = true;
 
-    // Navegação
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+
     public ICollection<ProductPrice> Prices { get; set; } = new List<ProductPrice>();
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

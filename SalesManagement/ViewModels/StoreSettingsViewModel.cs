@@ -10,14 +10,17 @@ public class StoreSettingsViewModel
     [Display(Name = "Nome da Loja")]
     public string StoreName { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "O CNPJ é obrigatório.")]
     [Display(Name = "CNPJ")]
-    public string? Cnpj { get; set; }
+    public string Cnpj { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "O endereço é obrigatório.")]
     [Display(Name = "Endereço da Loja")]
-    public string? StoreAddress { get; set; }
+    public string StoreAddress { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "O telefone é obrigatório.")]
     [Display(Name = "Telefone")]
-    public string? StorePhone { get; set; }
+    public string StorePhone { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "O e-mail é obrigatório.")]
     [EmailAddress(ErrorMessage = "E-mail inválido.")]

@@ -13,7 +13,7 @@
         <span class="card-title">⚙️ Configurações da Loja</span>
     </div>
 
-    <form asp-action="Index" method="post">
+    <form asp-action="Index" method="post" id="settingsForm">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
@@ -25,25 +25,25 @@
 
             <div class="form-group">
                 <label asp-for="StoreName" class="form-label"></label>
-                <input asp-for="StoreName" class="form-input" placeholder="Ex: SalesUP Modas" />
+                <input asp-for="StoreName" class="form-input" placeholder="Ex: SalesUP Modas" required />
                 <span asp-validation-for="StoreName" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
             <div class="form-group">
                 <label asp-for="Cnpj" class="form-label"></label>
-                <input asp-for="Cnpj" class="form-input" placeholder="00.000.000/0000-00" />
+                <input asp-for="Cnpj" class="form-input" id="cnpjInput" placeholder="00.000.000/0000-00" maxlength="18" required />
                 <span asp-validation-for="Cnpj" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
             <div class="form-group">
                 <label asp-for="StoreAddress" class="form-label"></label>
-                <input asp-for="StoreAddress" class="form-input" placeholder="Rua, número, bairro, cidade" />
+                <input asp-for="StoreAddress" class="form-input" placeholder="Rua, número, bairro, cidade" required />
                 <span asp-validation-for="StoreAddress" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
             <div class="form-group">
                 <label asp-for="StorePhone" class="form-label"></label>
-                <input asp-for="StorePhone" class="form-input" placeholder="(11) 99999-9999" />
+                <input asp-for="StorePhone" class="form-input" id="phoneInput" placeholder="(11) 99999-9999" maxlength="15" required />
                 <span asp-validation-for="StorePhone" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
         </div>
@@ -57,7 +57,7 @@
 
             <div class="form-group">
                 <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-input" placeholder="admin@salesup.com" />
+                <input asp-for="Email" class="form-input" placeholder="admin@salesup.com" required />
                 <span asp-validation-for="Email" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
@@ -74,12 +74,14 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
             <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
             <a href="/Sales" class="btn btn-secondary">← Voltar</a>
         </div>
-        <br />
     </form>
+
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
+
     <div style="text-align: center;">
         <h3 style="font-size: 1rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase;">
             🚪 Encerrar Sessão
@@ -97,4 +99,46 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        // 🔧 MÁSCARA CNPJ
+        const cnpjInput = document.getElementById('cnpjInput');
+        if (cnpjInput) {
+            cnpjInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 14) value = value.slice(0, 14);
+
+                if (value.length > 12) {
+                    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+                } else if (value.length > 8) {
+                    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
+                } else if (value.length > 5) {
+                    value = value.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
+                }
+
+                e.target.value = value;
+            });
+        }
+
+        // 🔧 MÁSCARA TELEFONE
+        const phoneInput = document.getElementById('phoneInput');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+
+                if (value.length > 10) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})$/, '($1) $2');
+                }
+
+                e.target.value = value;
+            });
+        }
+    </script>
 }

@@ -12,8 +12,8 @@ using SalesManagement.Data;
 namespace SalesManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260727161551_AddUserAndLogin")]
-    partial class AddUserAndLogin
+    [Migration("20260728183527_Rebiuld")]
+    partial class Rebiuld
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,7 +53,12 @@ namespace SalesManagement.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("CashRegisters");
                 });
@@ -79,10 +84,15 @@ namespace SalesManagement.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Products");
 
@@ -92,35 +102,40 @@ namespace SalesManagement.Migrations
                             Id = 1,
                             Code = "001",
                             IsActive = true,
-                            Name = "Camisa Básica Branca"
+                            Name = "Camisa Básica Branca",
+                            UserId = 1
                         },
                         new
                         {
                             Id = 2,
                             Code = "002",
                             IsActive = true,
-                            Name = "Camisa Básica Preta"
+                            Name = "Camisa Básica Preta",
+                            UserId = 1
                         },
                         new
                         {
                             Id = 3,
                             Code = "003",
                             IsActive = true,
-                            Name = "Calça Jeans"
+                            Name = "Calça Jeans",
+                            UserId = 1
                         },
                         new
                         {
                             Id = 4,
                             Code = "004",
                             IsActive = true,
-                            Name = "Tênis Esportivo"
+                            Name = "Tênis Esportivo",
+                            UserId = 1
                         },
                         new
                         {
                             Id = 5,
                             Code = "005",
                             IsActive = true,
-                            Name = "Boné"
+                            Name = "Boné",
+                            UserId = 1
                         });
                 });
 
@@ -260,7 +275,12 @@ namespace SalesManagement.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Sales");
                 });
@@ -355,6 +375,28 @@ namespace SalesManagement.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SalesManagement.Models.CashRegister", b =>
+                {
+                    b.HasOne("SalesManagement.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SalesManagement.Models.Product", b =>
+                {
+                    b.HasOne("SalesManagement.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SalesManagement.Models.ProductPrice", b =>
                 {
                     b.HasOne("SalesManagement.Models.Product", "Product")
@@ -364,6 +406,17 @@ namespace SalesManagement.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("SalesManagement.Models.Sale", b =>
+                {
+                    b.HasOne("SalesManagement.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SalesManagement.Models.SaleItem", b =>

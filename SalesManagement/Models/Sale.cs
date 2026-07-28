@@ -35,6 +35,8 @@ public class Sale
     [Display(Name = "Status")]
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
-    // Navegação
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+
     public ICollection<SaleItem> Items { get; set; } = new List<SaleItem>();
 }
