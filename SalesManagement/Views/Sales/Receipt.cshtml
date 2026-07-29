@@ -212,22 +212,40 @@
                 <span>TOTAL:</span>
                 <span style="color: #2563eb;">@Model.TotalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
             </div>
-
-            <div class="payment-box">
-                @(Model.PaymentMethod switch {
+<div class="payment-box">
+    @foreach (var payment in Model.Payments.OrderBy(p => p.Id))
+    {
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem; font-size: 0.85rem;">
+            <span style="flex: 1;">
+                @(payment.PaymentMethod switch {
                     PaymentMethod.Cash => "💵 Dinheiro",
-                    PaymentMethod.DebitCard => "💳 Cartão de Débito",
-                    PaymentMethod.CreditCard => "💳 Cartão de Crédito",
+                    PaymentMethod.DebitCard => "💳 Débito",
+                    PaymentMethod.CreditCard => "💳 Crédito",
                     PaymentMethod.Pix => "📱 PIX",
-                    _ => Model.PaymentMethod.ToString()
+                    _ => payment.PaymentMethod.ToString()
                 })
-                @if (Model.PaymentMethod == PaymentMethod.CreditCard)
+                @if (payment.PaymentMethod == PaymentMethod.CreditCard)
                 {
-                    <div class="installments">
-                        @Model.Installments x de @((Model.TotalAmount / Model.Installments).ToString("C", new System.Globalization.CultureInfo("pt-BR")))
-                    </div>
+                    <span style="font-size: 0.8rem; color: #2563eb; white-space: nowrap;">(@payment.Installments x)</span>
                 }
-            </div>
+            </span>
+            <span style="font-weight: 600; white-space: nowrap; margin-left: 0.5rem;">
+                @payment.Amount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))
+            </span>
+        </div>
+    }
+    @{
+        var totalPaid = Model.Payments.Sum(p => p.Amount);
+        var change = totalPaid - Model.TotalAmount;
+    }
+    @if (change > 0)
+    {
+        <div style="display: flex; justify-content: space-between; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #000; font-weight: 700; color: #16a34a; font-size: 0.9rem;">
+            <span>TROCO</span>
+            <span>@change.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+        </div>
+    }
+</div>
 
             <div class="receipt-footer">
                 <p>Obrigado pela preferência! 🙏</p>

@@ -77,7 +77,39 @@
                 </tbody>
             </table>
         </div>
-
+        <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 0.375rem;">
+    <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.5rem;">Pagamentos</label>
+    @foreach (var payment in Model.Payments.OrderBy(p => p.Id))
+    {
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+            <span>
+                @(payment.PaymentMethod switch {
+                    PaymentMethod.Cash => "💵 Dinheiro",
+                    PaymentMethod.DebitCard => "💳 Débito",
+                    PaymentMethod.CreditCard => "💳 Crédito",
+                    PaymentMethod.Pix => "📱 PIX",
+                    _ => payment.PaymentMethod.ToString()
+                })
+                @if (payment.PaymentMethod == PaymentMethod.CreditCard)
+                {
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">(@payment.Installments x)</span>
+                }
+            </span>
+            <span>@payment.Amount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+        </div>
+    }
+    @{
+        var totalPaid = Model.Payments.Sum(p => p.Amount);
+        var change = totalPaid - Model.TotalAmount;
+    }
+    @if (change > 0)
+    {
+        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); color: var(--success); font-weight: 700;">
+            <span>Troco</span>
+            <span>@change.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</span>
+        </div>
+    }
+</div>
         <div style="margin-top: 1rem; text-align: right;">
             @if (Model.Discount > 0)
             {

@@ -113,36 +113,40 @@
         <form asp-action="Finalize" method="post" id="finalizeForm" style="margin-top: 1.5rem;">
             @Html.AntiForgeryToken()
 
-            <!-- 🔧 BOTÕES DE PAGAMENTO -->
+            <!-- Botões para adicionar pagamento -->
             <div class="form-group">
-                <label class="form-label">Forma de Pagamento *</label>
+                <label class="form-label">Formas de Pagamento *</label>
                 <div class="payment-methods">
-                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.Cash" onclick="selectPayment(this)">
-                        💵 Dinheiro
-                    </button>
-                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.DebitCard" onclick="selectPayment(this)">
-                        💳 Débito
-                    </button>
-                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.CreditCard" onclick="selectPayment(this)">
-                        💳 Crédito
-                    </button>
-                    <button type="button" class="btn btn-payment" data-value="@PaymentMethod.Pix" onclick="selectPayment(this)">
-                        📱 PIX
-                    </button>
+                    <button type="button" class="btn btn-payment" onclick="addPayment('Cash')">💵 Dinheiro</button>
+                    <button type="button" class="btn btn-payment" onclick="addPayment('DebitCard')">💳 Débito</button>
+                    <button type="button" class="btn btn-payment" onclick="addPayment('CreditCard')">💳 Crédito</button>
+                    <button type="button" class="btn btn-payment" onclick="addPayment('Pix')">📱 PIX</button>
                 </div>
-                <input type="hidden" asp-for="PaymentMethod" id="paymentMethodInput" required />
-                <span asp-validation-for="PaymentMethod" style="color: var(--danger); font-size: 0.875rem;"></span>
             </div>
 
-            <!-- 🔧 PARCELAS (só aparece no crédito) -->
-            <div class="form-group" id="installmentsGroup" style="display: none;">
-                <label asp-for="Installments" class="form-label">Parcelas</label>
-                <select asp-for="Installments" class="form-select" id="installmentsSelect">
-                    @for (int i = 1; i <= 12; i++)
-                    {
-                        <option value="@i">@i x @(i == 1 ? "à vista" : "")</option>
-                    }
-                </select>
+            <!-- Lista de pagamentos adicionados -->
+            <div id="paymentsList" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <p id="noPaymentsMsg" style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Nenhuma forma de pagamento adicionada.</p>
+            </div>
+
+            <!-- Resumo de pagamento -->
+            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 0.375rem; font-size: 0.95rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Total a Pagar:</span>
+                    <strong id="displayTotalToPay" style="font-size: 1.1rem;">R$ 0,00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Total Pago:</span>
+                    <strong id="displayTotalPaid">R$ 0,00</strong>
+                </div>
+                <div id="changeRow" style="display: none; justify-content: space-between; color: var(--success); font-weight: 700; font-size: 1.1rem; margin-bottom: 0.35rem;">
+                    <span>🔄 Troco:</span>
+                    <span id="displayChange">R$ 0,00</span>
+                </div>
+                <div id="remainingRow" style="display: none; justify-content: space-between; color: var(--danger); font-weight: 700; margin-bottom: 0.35rem;">
+                    <span>⚠️ Falta:</span>
+                    <span id="displayRemaining">R$ 0,00</span>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-success btn-lg" style="width: 100%; margin-top: 1rem;" id="btnFinalize">
@@ -150,7 +154,7 @@
             </button>
 
             <div id="finalizeError" style="color: var(--danger); font-size: 0.875rem; text-align: center; margin-top: 0.5rem; display: none;">
-                ⚠️ Adicione pelo menos um produto para finalizar a venda.
+                ⚠️ Adicione pelo menos um produto e uma forma de pagamento para finalizar a venda.
             </div>
         </form>
 
@@ -168,22 +172,115 @@
             return value.toFixed(2).replace('.', ',');
         }
 
-        // Seleção de pagamento
-        function selectPayment(btn) {
-            document.querySelectorAll('.btn-payment').forEach(b => b.classList.remove('active-payment'));
-            btn.classList.add('active-payment');
-            document.getElementById('paymentMethodInput').value = btn.dataset.value;
+        // ========== PAGAMENTOS MÚLTIPLOS ==========
+        let payments = [];
 
-            const instGroup = document.getElementById('installmentsGroup');
-            if (btn.dataset.value === 'CreditCard') {
-                instGroup.style.display = 'block';
+        function getPaymentLabel(method) {
+            const labels = {
+                'Cash': '💵 Dinheiro',
+                'DebitCard': '💳 Débito',
+                'CreditCard': '💳 Crédito',
+                'Pix': '📱 PIX'
+            };
+            return labels[method] || method;
+        }
+
+        function getCurrentTotal() {
+            return parsePtBr(document.getElementById('totalAmount').textContent.replace('R$ ', ''));
+        }
+
+        function addPayment(method) {
+            const total = getCurrentTotal();
+            const currentPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+            const remaining = Math.max(0, total - currentPaid);
+
+            payments.push({
+                method: method,
+                amount: remaining,
+                installments: 1
+            });
+            renderPayments();
+        }
+
+        function removePayment(index) {
+            payments.splice(index, 1);
+            renderPayments();
+        }
+
+        function renderPayments() {
+            const container = document.getElementById('paymentsList');
+
+            if (payments.length === 0) {
+                container.innerHTML = '<p id="noPaymentsMsg" style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Nenhuma forma de pagamento adicionada.</p>';
             } else {
-                instGroup.style.display = 'none';
-                document.getElementById('installmentsSelect').value = '1';
+                container.innerHTML = payments.map((p, index) => `
+                    <div class="payment-row" style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 0.5rem; background: #f1f5f9; border-radius: 0.375rem; border: 1px solid var(--border); flex-wrap: wrap;">
+                        <span style="min-width: 110px; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+                            ${getPaymentLabel(p.method)}
+                        </span>
+                        <input type="hidden" name="Payments[${index}].PaymentMethod" value="${p.method}" />
+                        <div style="flex: 1; min-width: 90px;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.15rem;">Valor (R$)</label>
+                            <input type="text" inputmode="decimal" name="Payments[${index}].Amount" class="form-input payment-amount" value="${formatPtBr(p.amount)}" style="width: 100%;" data-index="${index}" />
+                        </div>
+                        ${p.method === 'CreditCard' ? `
+                        <div style="width: 130px;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.15rem;">Parcelas</label>
+                            <select name="Payments[${index}].Installments" class="form-select installment-select" style="width: 100%;" data-index="${index}">
+                                ${Array.from({length: 12}, (_, i) => `<option value="${i+1}" ${p.installments === i+1 ? 'selected' : ''}>${i+1}x ${i === 0 ? 'à vista' : ''}</option>`).join('')}
+                            </select>
+                        </div>
+                        ` : `<input type="hidden" name="Payments[${index}].Installments" value="1" />`}
+                        <button type="button" onclick="removePayment(${index})" class="btn btn-danger" style="padding: 0.35rem 0.6rem;">🗑️</button>
+                    </div>
+                `).join('');
+            }
+            updatePaymentSummary();
+        }
+
+        function updatePaymentSummary() {
+            const total = getCurrentTotal();
+            const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+            const change = totalPaid - total;
+
+            document.getElementById('displayTotalToPay').textContent = 'R$ ' + formatPtBr(total);
+            document.getElementById('displayTotalPaid').textContent = 'R$ ' + formatPtBr(totalPaid);
+
+            const changeRow = document.getElementById('changeRow');
+            const remainingRow = document.getElementById('remainingRow');
+
+            if (change > 0.001) {
+                changeRow.style.display = 'flex';
+                document.getElementById('displayChange').textContent = 'R$ ' + formatPtBr(change);
+                remainingRow.style.display = 'none';
+            } else if (change < -0.001) {
+                remainingRow.style.display = 'flex';
+                document.getElementById('displayRemaining').textContent = 'R$ ' + formatPtBr(Math.abs(change));
+                changeRow.style.display = 'none';
+            } else {
+                changeRow.style.display = 'none';
+                remainingRow.style.display = 'none';
             }
         }
 
-        // Adicionar produto
+        // Listeners dinâmicos para valor e parcelas
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('payment-amount')) {
+                const idx = parseInt(e.target.dataset.index);
+                if (!isNaN(idx)) {
+                    payments[idx].amount = parsePtBr(e.target.value);
+                    updatePaymentSummary();
+                }
+            }
+            if (e.target.classList.contains('installment-select')) {
+                const idx = parseInt(e.target.dataset.index);
+                if (!isNaN(idx)) {
+                    payments[idx].installments = parseInt(e.target.value);
+                }
+            }
+        });
+
+        // ========== PRODUTOS ==========
         document.getElementById('btnAddProduct').addEventListener('click', addProduct);
         document.getElementById('productCode').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -220,7 +317,6 @@
             });
         }
 
-        // Atualizar quantidade
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('qty-input')) {
                 const productPriceId = e.target.dataset.priceId;
@@ -230,7 +326,6 @@
             }
         });
 
-        // Atualizar preço
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('price-input')) {
                 const productPriceId = e.target.dataset.priceId;
@@ -240,7 +335,6 @@
             }
         });
 
-        // Aplicar desconto no item
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('discount-input')) {
                 const productPriceId = e.target.dataset.priceId;
@@ -249,7 +343,6 @@
             }
         });
 
-        // Remover item
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('btn-remove')) {
                 const productPriceId = e.target.dataset.priceId;
@@ -257,7 +350,6 @@
             }
         });
 
-        // Desconto geral — 🔧 CORREÇÃO: envia com vírgula (pt-BR)
         document.getElementById('btnApplyGeneralDiscount').addEventListener('click', function() {
             const discount = parsePtBr(document.getElementById('generalDiscount').value);
             updateItem('/Sales/ApplyGeneralDiscount', `discount=${formatPtBr(discount)}`);
@@ -282,22 +374,30 @@
             });
         }
 
-        // Validação no submit
+        // ========== FINALIZAR ==========
         document.getElementById('finalizeForm').addEventListener('submit', function(e) {
             const emptyRow = document.getElementById('emptyRow');
             const errorDiv = document.getElementById('finalizeError');
-            const codeInput = document.getElementById('productCode');
 
             if (emptyRow) {
                 e.preventDefault();
                 errorDiv.style.display = 'block';
-                codeInput.focus();
+                document.getElementById('productCode').focus();
                 return false;
             }
 
-            if (!document.getElementById('paymentMethodInput').value) {
+            if (payments.length === 0) {
                 e.preventDefault();
-                alert('Selecione uma forma de pagamento.');
+                alert('Adicione pelo menos uma forma de pagamento.');
+                return false;
+            }
+
+            const total = getCurrentTotal();
+            const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+            if (totalPaid < total - 0.001) {
+                e.preventDefault();
+                alert('O valor pago é menor que o total da venda. Complete o pagamento.');
                 return false;
             }
 
@@ -342,6 +442,12 @@
             document.getElementById('subtotal').textContent = 'R$ ' + formatPtBr(cart.subtotal);
             document.getElementById('itemsDiscount').textContent = 'R$ ' + formatPtBr(cart.items.reduce((sum, i) => sum + i.discount, 0));
             document.getElementById('totalAmount').textContent = 'R$ ' + formatPtBr(cart.totalAmount);
+
+            // Atualiza resumo de pagamento quando o total muda
+            updatePaymentSummary();
         }
+
+        // Inicializa
+        updatePaymentSummary();
     </script>
 }

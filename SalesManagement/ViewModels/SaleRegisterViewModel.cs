@@ -7,7 +7,7 @@ public class SaleRegisterViewModel
 {
     public List<SaleItemViewModel> Items { get; set; } = new List<SaleItemViewModel>();
 
-    [Required(ErrorMessage = "Selecione a forma de pagamento.")]
+    // Mantido para compatibilidade com vendas antigas
     [Display(Name = "Forma de Pagamento")]
     public PaymentMethod PaymentMethod { get; set; }
 
@@ -18,7 +18,12 @@ public class SaleRegisterViewModel
     [Display(Name = "Desconto Geral")]
     public decimal GeneralDiscount { get; set; } = 0;
 
+    // 🔧 NOVO: pagamentos múltiplos
+    public List<SalePaymentViewModel> Payments { get; set; } = new List<SalePaymentViewModel>();
+
     public decimal Subtotal => Items.Sum(i => i.UnitPrice * i.Quantity);
     public decimal TotalDiscount => Items.Sum(i => i.Discount) + GeneralDiscount;
     public decimal TotalAmount => Subtotal - TotalDiscount;
+    public decimal AmountPaid => Payments.Sum(p => p.Amount);
+    public decimal Change => AmountPaid - TotalAmount;
 }

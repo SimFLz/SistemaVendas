@@ -37,6 +37,6 @@ public class Sale
 
     public int UserId { get; set; }
     public User User { get; set; } = null!;
-
+    public ICollection<SalePayment> Payments { get; set; } = new List<SalePayment>();
     public ICollection<SaleItem> Items { get; set; } = new List<SaleItem>();
 }

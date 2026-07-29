@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductPrice> ProductPrices { get; set; } = null!;
     public DbSet<Sale> Sales { get; set; } = null!;
     public DbSet<SaleItem> SaleItems { get; set; } = null!;
+    public DbSet<SalePayment> SalePayments { get; set; } = null!;
     public DbSet<CashRegister> CashRegisters { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -55,6 +56,16 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        // Relacionamento Sale -> SalePayments
+        modelBuilder.Entity<SalePayment>()
+            .HasOne(sp => sp.Sale)
+            .WithMany(s => s.Payments)
+            .HasForeignKey(sp => sp.SaleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SalePayment>()
+            .Property(sp => sp.PaymentMethod)
+            .HasConversion<string>();
         // ===================================
 
         // Seed usuário admin

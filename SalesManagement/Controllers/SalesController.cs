@@ -167,19 +167,37 @@ public class SalesController : BaseController
     {
         var cart = GetCartFromSession();
 
-        if (!ModelState.IsValid || cart.Items.Count == 0)
+        if (cart.Items.Count == 0)
         {
-            TempData["Error"] = "Adicione pelo menos um produto e preencha todos os campos.";
+            TempData["Error"] = "Adicione pelo menos um produto para finalizar a venda.";
             return RedirectToAction(nameof(Register));
         }
+
+        if (model.Payments == null || !model.Payments.Any())
+        {
+            TempData["Error"] = "Adicione pelo menos uma forma de pagamento.";
+            return RedirectToAction(nameof(Register));
+        }
+
+        var totalAmount = cart.TotalAmount;
+        var totalPaid = model.Payments.Sum(p => p.Amount);
+
+        if (totalPaid < totalAmount)
+        {
+            TempData["Error"] = $"O valor pago ({totalPaid.ToString("C", new System.Globalization.CultureInfo("pt-BR"))}) é menor que o total da venda ({totalAmount.ToString("C", new System.Globalization.CultureInfo("pt-BR"))}).";
+            return RedirectToAction(nameof(Register));
+        }
+
+        var firstPayment = model.Payments.First();
+        var creditPayment = model.Payments.FirstOrDefault(p => p.PaymentMethod == PaymentMethod.CreditCard);
 
         var sale = new Sale
         {
             SaleDate = DateTime.Now,
-            PaymentMethod = model.PaymentMethod,
-            Installments = model.PaymentMethod == PaymentMethod.CreditCard ? model.Installments : 1,
+            PaymentMethod = firstPayment.PaymentMethod,
+            Installments = creditPayment?.Installments ?? 1,
             Discount = cart.GeneralDiscount,
-            TotalAmount = cart.TotalAmount,
+            TotalAmount = totalAmount,
             Status = SaleStatus.Completed,
             UserId = GetCurrentUserId()
         };
@@ -187,6 +205,19 @@ public class SalesController : BaseController
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
 
+        // 🔧 Salva os pagamentos múltiplos
+        foreach (var payment in model.Payments)
+        {
+            _context.SalePayments.Add(new SalePayment
+            {
+                SaleId = sale.Id,
+                PaymentMethod = payment.PaymentMethod,
+                Amount = payment.Amount,
+                Installments = payment.PaymentMethod == PaymentMethod.CreditCard ? payment.Installments : 1
+            });
+        }
+
+        // Itens da venda
         foreach (var item in cart.Items)
         {
             _context.SaleItems.Add(new SaleItem
@@ -215,6 +246,7 @@ public class SalesController : BaseController
         var sale = await _context.Sales
             .Include(s => s.Items)
             .ThenInclude(i => i.Product)
+            .Include(s => s.Payments) // 🔧 ADICIONAR
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == GetCurrentUserId());
 
         if (sale == null) return NotFound();
@@ -268,6 +300,7 @@ public class SalesController : BaseController
         var sale = await _context.Sales
             .Include(s => s.Items)
             .ThenInclude(i => i.Product)
+            .Include(s => s.Payments) // 🔧 ADICIONAR
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == GetCurrentUserId());
 
         if (sale == null) return NotFound();

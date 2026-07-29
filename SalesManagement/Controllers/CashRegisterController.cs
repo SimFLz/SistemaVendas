@@ -99,17 +99,24 @@ public class CashRegisterController : BaseController
             var endDate = startDate.AddDays(1);
 
             var sales = await _context.Sales
-                .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= startDate && s.SaleDate < endDate && s.Status != SaleStatus.Cancelled)
-                .Include(s => s.Items)
-                .ThenInclude(i => i.Product)
-                .ToListAsync();
+     .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= startDate && s.SaleDate < endDate && s.Status != SaleStatus.Cancelled)
+     .Include(s => s.Items)
+     .ThenInclude(i => i.Product)
+     .Include(s => s.Payments) // 🔧 ADICIONAR
+     .ToListAsync();
 
             var totalRevenue = sales.Sum(s => s.TotalAmount);
             var totalSales = sales.Count;
 
-            var salesByPayment = sales
-                .GroupBy(s => s.PaymentMethod)
-                .ToDictionary(g => g.Key, g => g.Sum(s => s.TotalAmount));
+            // 🔧 Agrupa pelos pagamentos reais
+            var saleIds = sales.Select(s => s.Id).ToList();
+            var payments = await _context.SalePayments
+                .Where(sp => saleIds.Contains(sp.SaleId))
+                .ToListAsync();
+
+            var salesByPayment = payments
+                .GroupBy(p => p.PaymentMethod)
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
             ViewData["TotalRevenue"] = totalRevenue;
             ViewData["TotalSales"] = totalSales;
@@ -174,19 +181,25 @@ public class CashRegisterController : BaseController
         ViewData["Title"] = "Caixa Fechado";
 
         var sales = await _context.Sales
-            .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= cashRegister.OpenDate
-                     && s.SaleDate <= (cashRegister.CloseDate ?? DateTime.Now)
-                     && s.Status != SaleStatus.Cancelled)
-            .Include(s => s.Items)
-            .ThenInclude(i => i.Product)
-            .ToListAsync();
+     .Where(s => s.UserId == GetCurrentUserId() && s.SaleDate >= cashRegister.OpenDate
+              && s.SaleDate <= (cashRegister.CloseDate ?? DateTime.Now)
+              && s.Status != SaleStatus.Cancelled)
+     .Include(s => s.Items)
+     .ThenInclude(i => i.Product)
+     .Include(s => s.Payments) // 🔧 ADICIONAR
+     .ToListAsync();
 
         var totalRevenue = sales.Sum(s => s.TotalAmount);
         var totalSalesCount = sales.Count;
 
-        var salesByPayment = sales
-            .GroupBy(s => s.PaymentMethod)
-            .ToDictionary(g => g.Key, g => g.Sum(s => s.TotalAmount));
+        var saleIds = sales.Select(s => s.Id).ToList();
+        var payments = await _context.SalePayments
+            .Where(sp => saleIds.Contains(sp.SaleId))
+            .ToListAsync();
+
+        var salesByPayment = payments
+            .GroupBy(p => p.PaymentMethod)
+            .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
         ViewData["TotalRevenue"] = totalRevenue;
         ViewData["TotalSales"] = totalSalesCount;
