@@ -1,15 +1,20 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesManagement.Data;
+using SalesManagement.Middleware;
 using System.Globalization;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// 🔧 CSRF em TODOS os POSTs automaticamente (exceto onde [IgnoreAntiforgeryToken])
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
-// 🔧 CONFIGURAR CULTURA pt-BR para decimais com vírgula (39,90)
+// 🔧 CULTURA pt-BR
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var supportedCultures = new[] { new CultureInfo("pt-BR") };
@@ -18,50 +23,60 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedUICultures = supportedCultures;
 });
 
-// 🔧 AUTHENTICATION E AUTHORIZATION
+// 🔧 AUTHENTICATION — cookies seguros
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+
+        // Segurança do cookie
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Use Always em produção com HTTPS
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.Name = "SalesUP.Auth";
     });
 
 builder.Services.AddAuthorization();
 
-// Configurar Session (carrinho de vendas + caixa)
+// 🔧 SESSION — carrinho de vendas
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.IdleTimeout = TimeSpan.FromHours(4); // reduzido de 8h para 4h
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.Name = "SalesUP.Session";
 });
 
-// Configurar MySQL
+// MySQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    app.UseHsts(); // 🔧 HSTS ativado em produção
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// 🔧 APLICAR LOCALIZAÇÃO pt-BR
+// 🔧 MIDDLEWARES DE SEGURANÇA (ordem é importante)
 app.UseRequestLocalization();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseRouting();
 app.UseSession();
-
-// 🔧 ORDEM CORRETA: Authentication ANTES de Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

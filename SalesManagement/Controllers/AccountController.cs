@@ -39,11 +39,16 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
 
         if (user == null || !VerifyPassword(model.Password, user.PasswordHash))
         {
+            
+            Middleware.RateLimitingMiddleware.RecordFailedAttempt(ip);
+
             ModelState.AddModelError(string.Empty, "E-mail ou senha inválidos.");
             return View(model);
         }
@@ -146,13 +151,11 @@ public class AccountController : Controller
 
     private static bool VerifyPassword(string password, string hash)
     {
-        return HashPassword(password) == hash;
+        return Helpers.SecurePasswordHasher.VerifyPassword(password, hash);
     }
 
     public static string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToHexString(bytes).ToLower();
+        return Helpers.SecurePasswordHasher.HashPassword(password);
     }
 }

@@ -69,12 +69,13 @@ public class ApplicationDbContext : DbContext
         // ===================================
 
         // Seed usuário admin
+        // Seed usuário admin com hash PBKDF2
         modelBuilder.Entity<User>().HasData(
             new User
             {
                 Id = 1,
                 Email = "admin@salesup.com",
-                PasswordHash = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+                PasswordHash = "100000.U2FsZXNVUFNlZWRTYWx0IQ==.CmffvGW4uivI56zsXPb26IjZJYRiIwezvNC6MvEQJwo=",
                 StoreName = "SALESUP",
                 Cnpj = "00.000.000/0000-00",
                 StoreAddress = "Rua Exemplo, 123 - Centro",
