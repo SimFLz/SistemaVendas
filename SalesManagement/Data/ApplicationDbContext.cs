@@ -24,8 +24,8 @@ public class ApplicationDbContext : DbContext
 
         // Índices únicos
         modelBuilder.Entity<Product>()
-            .HasIndex(p => p.Code)
-            .IsUnique();
+    .HasIndex(p => new { p.Code, p.UserId })
+    .IsUnique();
 
         modelBuilder.Entity<ProductPrice>()
             .HasIndex(pp => pp.Barcode)
