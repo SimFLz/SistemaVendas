@@ -38,9 +38,15 @@ public class ReportsController : BaseController
         var totalSales = sales.Count;
         var averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-        var salesByPayment = sales
-            .GroupBy(s => s.PaymentMethod)
-            .ToDictionary(g => g.Key, g => g.Sum(s => s.TotalAmount));
+        // 🔧 CORREÇÃO: agrupa pelos pagamentos reais da tabela SalePayments
+        var saleIds = sales.Select(s => s.Id).ToList();
+        var payments = await _context.SalePayments
+            .Where(sp => saleIds.Contains(sp.SaleId))
+            .ToListAsync();
+
+        var salesByPayment = payments
+            .GroupBy(sp => sp.PaymentMethod)
+            .ToDictionary(g => g.Key, g => g.Sum(sp => sp.Amount));
 
         var today = DateTime.Today;
         var tomorrow = today.AddDays(1);
@@ -81,9 +87,15 @@ public class ReportsController : BaseController
         var totalSales = sales.Count;
         var averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-        var salesByPayment = sales
-            .GroupBy(s => s.PaymentMethod)
-            .ToDictionary(g => g.Key, g => g.Sum(s => s.TotalAmount));
+        // 🔧 CORREÇÃO: agrupa pelos pagamentos reais da tabela SalePayments
+        var saleIds = sales.Select(s => s.Id).ToList();
+        var payments = await _context.SalePayments
+            .Where(sp => saleIds.Contains(sp.SaleId))
+            .ToListAsync();
+
+        var salesByPayment = payments
+            .GroupBy(sp => sp.PaymentMethod)
+            .ToDictionary(g => g.Key, g => g.Sum(sp => sp.Amount));
 
         var viewModel = new MonthlyReportViewModel
         {
